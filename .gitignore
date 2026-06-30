@@ -1,0 +1,32 @@
+# === Backend (Spring Boot / Maven) ===
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/.apt_generated
+backend/.classpath
+backend/.factorypath
+backend/.project
+backend/.settings
+backend/.springBeans
+backend/.sts4-cache
+
+# === Frontend (Node.js) ===
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# === IDEs ===
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Credenciales ===
+backend/src/main/resources/application-local.properties
+.env
