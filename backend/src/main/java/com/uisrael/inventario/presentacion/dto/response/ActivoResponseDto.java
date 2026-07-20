@@ -18,5 +18,6 @@ public class ActivoResponseDto {
 	private String observaciones;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
+	private ActivoDetalleResponseDto detalle;
 
 }

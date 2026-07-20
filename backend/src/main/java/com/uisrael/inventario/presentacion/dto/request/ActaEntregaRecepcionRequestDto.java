@@ -7,13 +7,16 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class AsignacionActivoRequestDto {
+public class ActaEntregaRecepcionRequestDto {
 
 	@NotNull
 	private Integer idActivo;
 
 	@NotNull
 	private Integer idEmpleado;
+
+	@NotNull
+	private Integer idUsuarioTi;
 
 	@NotNull
 	private LocalDateTime fechaAsignacion;

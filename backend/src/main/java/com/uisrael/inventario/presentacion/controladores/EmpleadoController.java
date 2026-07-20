@@ -38,6 +38,7 @@ public class EmpleadoController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public EmpleadoResponseDto guardar(@Valid @RequestBody EmpleadoRequestDto requestDto) {
 		Empleado empleado = mapper.toDomain(requestDto);
+		aplicarRolPorDefecto(empleado);
 		return mapper.toResponseDto(empleadoUseCase.guardar(empleado));
 	}
 
@@ -55,6 +56,7 @@ public class EmpleadoController {
 	public EmpleadoResponseDto actualizar(@PathVariable("id") int id, @Valid @RequestBody EmpleadoRequestDto requestDto) {
 		Empleado empleado = mapper.toDomain(requestDto);
 		empleado.setIdEmpleado(id);
+		aplicarRolPorDefecto(empleado);
 		return mapper.toResponseDto(empleadoUseCase.guardar(empleado));
 	}
 
@@ -62,6 +64,12 @@ public class EmpleadoController {
 	public ResponseEntity<Void> eliminar(@PathVariable("id") int id) {
 		empleadoUseCase.eliminar(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	private void aplicarRolPorDefecto(Empleado empleado) {
+		if (empleado.getRol() == null || empleado.getRol().isBlank()) {
+			empleado.setRol("usuario");
+		}
 	}
 
 }

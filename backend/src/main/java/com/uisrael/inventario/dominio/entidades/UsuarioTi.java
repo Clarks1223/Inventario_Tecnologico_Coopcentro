@@ -9,14 +9,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AsignacionActivo {
+public class UsuarioTi {
 
-	private int idAsignacion;
-	private int idActivo;
+	private int idUsuarioTi;
 	private int idEmpleado;
-	private LocalDateTime fechaAsignacion;
-	private LocalDateTime fechaDevolucion;
-	private String estadoAsignacion;
-	private String motivo;
+	private String correo;
+	private String contrasena;
+	private LocalDateTime fechaCreacion;
+	private LocalDateTime fechaActualizacion;
 
 }

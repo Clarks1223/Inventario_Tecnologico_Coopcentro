@@ -2,6 +2,7 @@ package com.uisrael.inventario.presentacion.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -27,7 +28,8 @@ public class EmpleadoRequestDto {
 	@NotNull
 	private Integer idCargo;
 
-	private String numeroTelefono;
+	@Pattern(regexp = "administrador|usuario", message = "rol debe ser 'administrador' o 'usuario'")
+	private String rol;
 
 	@NotNull
 	private Boolean activo;

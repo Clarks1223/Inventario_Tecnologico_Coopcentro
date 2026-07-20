@@ -2,6 +2,8 @@ package com.uisrael.inventario.infraestructura.persistencia.jpa;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Check;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -16,6 +18,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "activos")
+@Check(constraints = "tipo_activo IN ('impresora_termica', 'dispositivo_movil', 'desktop', 'laptop', 'periferico')")
 public class ActivoEntity {
 
 	@Id

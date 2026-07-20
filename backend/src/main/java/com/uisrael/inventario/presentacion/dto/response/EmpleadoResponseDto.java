@@ -13,7 +13,7 @@ public class EmpleadoResponseDto {
 	private String extensionTelefonica;
 	private int idOficina;
 	private int idCargo;
-	private String numeroTelefono;
+	private String rol;
 	private boolean activo;
 
 }

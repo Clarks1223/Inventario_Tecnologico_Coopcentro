@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoUseCase;
 import com.uisrael.inventario.dominio.entidades.Activo;
+import com.uisrael.inventario.dominio.entidades.ActivoDetalle;
 import com.uisrael.inventario.presentacion.dto.request.ActivoRequestDto;
 import com.uisrael.inventario.presentacion.dto.response.ActivoResponseDto;
+import com.uisrael.inventario.presentacion.mapeadores.IActivoDetalleDtoMapper;
 import com.uisrael.inventario.presentacion.mapeadores.IActivoDtoMapper;
 
 import jakarta.validation.Valid;
@@ -29,10 +31,12 @@ public class ActivoController {
 
 	private final IActivoUseCase activoUseCase;
 	private final IActivoDtoMapper mapper;
+	private final IActivoDetalleDtoMapper detalleMapper;
 
-	public ActivoController(IActivoUseCase activoUseCase, IActivoDtoMapper mapper) {
+	public ActivoController(IActivoUseCase activoUseCase, IActivoDtoMapper mapper, IActivoDetalleDtoMapper detalleMapper) {
 		this.activoUseCase = activoUseCase;
 		this.mapper = mapper;
+		this.detalleMapper = detalleMapper;
 	}
 
 	@PostMapping
@@ -41,7 +45,9 @@ public class ActivoController {
 		Activo activo = mapper.toDomain(requestDto);
 		activo.setCreatedAt(LocalDateTime.now());
 		activo.setUpdatedAt(LocalDateTime.now());
-		return mapper.toResponseDto(activoUseCase.guardar(activo));
+		ActivoDetalle detalle = requestDto.getDetalle() == null ? null : detalleMapper.toDomain(requestDto.getDetalle());
+		Activo guardado = activoUseCase.guardar(activo, detalle);
+		return enriquecerConDetalle(mapper.toResponseDto(guardado));
 	}
 
 	@GetMapping
@@ -51,7 +57,7 @@ public class ActivoController {
 
 	@GetMapping("/{id}")
 	public ActivoResponseDto buscarPorId(@PathVariable("id") int id) {
-		return mapper.toResponseDto(activoUseCase.buscarPorId(id));
+		return enriquecerConDetalle(mapper.toResponseDto(activoUseCase.buscarPorId(id)));
 	}
 
 	@PutMapping("/{id}")
@@ -61,13 +67,21 @@ public class ActivoController {
 		activo.setIdActivo(id);
 		activo.setCreatedAt(existente.getCreatedAt());
 		activo.setUpdatedAt(LocalDateTime.now());
-		return mapper.toResponseDto(activoUseCase.guardar(activo));
+		ActivoDetalle detalle = requestDto.getDetalle() == null ? null : detalleMapper.toDomain(requestDto.getDetalle());
+		Activo guardado = activoUseCase.guardar(activo, detalle);
+		return enriquecerConDetalle(mapper.toResponseDto(guardado));
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> eliminar(@PathVariable("id") int id) {
 		activoUseCase.eliminar(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	private ActivoResponseDto enriquecerConDetalle(ActivoResponseDto responseDto) {
+		activoUseCase.buscarDetalle(responseDto.getIdActivo())
+				.ifPresent(detalle -> responseDto.setDetalle(detalleMapper.toResponseDto(detalle)));
+		return responseDto;
 	}
 
 }

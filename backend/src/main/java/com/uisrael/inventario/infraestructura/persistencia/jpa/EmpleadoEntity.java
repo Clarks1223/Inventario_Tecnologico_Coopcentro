@@ -43,8 +43,8 @@ public class EmpleadoEntity {
 	@JoinColumn(name = "id_cargo", foreignKey = @ForeignKey(name = "fk_empleados_id_cargo_cargos"))
 	private CargoEntity cargo;
 
-	@Column(name = "numero_telefono", length = 20)
-	private String numeroTelefono;
+	@Column(name = "rol", length = 20, nullable = false)
+	private String rol = "usuario";
 
 	private boolean activo;
 

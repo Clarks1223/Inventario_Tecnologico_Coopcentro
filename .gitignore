@@ -9,6 +9,12 @@ backend/.settings
 backend/.springBeans
 backend/.sts4-cache
 
+# Coleccion de Postman (uso local, no se sube al repo)
+backend/postman/
+
+# Actas PDF generadas en runtime (contienen datos personales: nombre, cedula)
+backend/actas-generadas/
+
 # === Frontend (Node.js) ===
 frontend/node_modules/
 frontend/dist/

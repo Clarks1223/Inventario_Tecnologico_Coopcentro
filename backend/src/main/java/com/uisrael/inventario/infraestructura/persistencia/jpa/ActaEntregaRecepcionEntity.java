@@ -15,20 +15,24 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "asignaciones_activo")
-public class AsignacionActivoEntity {
+@Table(name = "acta_entrega_recepcion")
+public class ActaEntregaRecepcionEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int idAsignacion;
+	private int idActa;
 
 	@ManyToOne
-	@JoinColumn(name = "id_activo", foreignKey = @ForeignKey(name = "fk_asignaciones_activo_id_activo_activos"))
+	@JoinColumn(name = "id_activo", nullable = false, foreignKey = @ForeignKey(name = "fk_acta_entrega_recepcion_id_activo_activos"))
 	private ActivoEntity activo;
 
 	@ManyToOne
-	@JoinColumn(name = "id_empleado", foreignKey = @ForeignKey(name = "fk_asignaciones_activo_id_empleado_empleados"))
+	@JoinColumn(name = "id_empleado", nullable = false, foreignKey = @ForeignKey(name = "fk_acta_entrega_recepcion_id_empleado_empleados"))
 	private EmpleadoEntity empleado;
+
+	@ManyToOne
+	@JoinColumn(name = "id_usuario_ti", nullable = false, foreignKey = @ForeignKey(name = "fk_acta_entrega_recepcion_id_usuario_ti_usuarios_ti"))
+	private UsuarioTiEntity usuarioTi;
 
 	@Column(name = "fecha_asignacion")
 	private LocalDateTime fechaAsignacion;
