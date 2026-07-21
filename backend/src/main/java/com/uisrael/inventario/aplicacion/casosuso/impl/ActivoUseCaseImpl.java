@@ -22,10 +22,8 @@ public class ActivoUseCaseImpl implements IActivoUseCase {
 	@Override
 	public Activo guardar(Activo nuevoActivo, ActivoDetalle detalle) {
 		Activo guardado = repositorio.guardar(nuevoActivo);
-		if (!"periferico".equals(guardado.getTipoActivo())) {
-			ActivoDetalle detalleRelevante = filtrarDetallePorTipo(guardado.getTipoActivo(), detalle, guardado.getIdActivo());
-			detalleRepositorio.guardar(detalleRelevante);
-		}
+		ActivoDetalle detalleRelevante = filtrarDetallePorTipo(guardado.getTipoActivo(), detalle, guardado.getIdActivo());
+		detalleRepositorio.guardar(detalleRelevante);
 		return guardado;
 	}
 
@@ -57,6 +55,7 @@ public class ActivoUseCaseImpl implements IActivoUseCase {
 			return resultado;
 		}
 		switch (tipoActivo) {
+			case "periferico" -> resultado.setTipoDispositivo(detalle.getTipoDispositivo());
 			case "impresora_termica" -> {
 				resultado.setTipoConexion(detalle.getTipoConexion());
 				resultado.setEstadoBateria(detalle.getEstadoBateria());

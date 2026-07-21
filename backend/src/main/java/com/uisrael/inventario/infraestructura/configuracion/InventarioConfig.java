@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaDocumentoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionUseCase;
@@ -61,6 +63,19 @@ public class InventarioConfig {
 	@Bean
 	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
+	}
+
+	@Bean
+	WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/**")
+						.allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*", "http://192.168.*.*:*")
+						.allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+						.allowedHeaders("*");
+			}
+		};
 	}
 
 	@Bean
@@ -134,8 +149,9 @@ public class InventarioConfig {
 	}
 
 	@Bean
-	IActaEntregaRecepcionUseCase actaEntregaRecepcionUseCase(IActaEntregaRecepcionRepositorio repositorio) {
-		return new ActaEntregaRecepcionUseCaseImpl(repositorio);
+	IActaEntregaRecepcionUseCase actaEntregaRecepcionUseCase(IActaEntregaRecepcionRepositorio repositorio, IActivoRepositorio activoRepositorio,
+			IActaDocumentoUseCase actaDocumentoUseCase) {
+		return new ActaEntregaRecepcionUseCaseImpl(repositorio, activoRepositorio, actaDocumentoUseCase);
 	}
 
 	@Bean

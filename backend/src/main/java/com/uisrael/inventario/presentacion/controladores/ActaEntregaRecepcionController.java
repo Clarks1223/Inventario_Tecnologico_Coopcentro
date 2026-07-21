@@ -20,6 +20,9 @@ import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaDocumentoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionUseCase;
 import com.uisrael.inventario.dominio.entidades.ActaEntregaRecepcion;
 import com.uisrael.inventario.presentacion.dto.request.ActaEntregaRecepcionRequestDto;
+import com.uisrael.inventario.presentacion.dto.request.AsignarActivoRequestDto;
+import com.uisrael.inventario.presentacion.dto.request.DevolverActivoRequestDto;
+import com.uisrael.inventario.presentacion.dto.request.DevolverTodoEmpleadoRequestDto;
 import com.uisrael.inventario.presentacion.dto.response.ActaEntregaRecepcionResponseDto;
 import com.uisrael.inventario.presentacion.mapeadores.IActaEntregaRecepcionDtoMapper;
 
@@ -77,6 +80,26 @@ public class ActaEntregaRecepcionController {
 				.contentType(MediaType.APPLICATION_PDF)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=acta-" + id + ".pdf")
 				.body(pdf);
+	}
+
+	@PostMapping("/asignar")
+	@ResponseStatus(HttpStatus.CREATED)
+	public ActaEntregaRecepcionResponseDto asignar(@Valid @RequestBody AsignarActivoRequestDto requestDto) {
+		ActaEntregaRecepcion acta = actaUseCase.asignar(requestDto.getIdActivo(), requestDto.getIdEmpleado(),
+				requestDto.getIdUsuarioTi(), requestDto.getMotivo());
+		return mapper.toResponseDto(acta);
+	}
+
+	@PostMapping("/{id}/devolver")
+	public ActaEntregaRecepcionResponseDto devolver(@PathVariable("id") int id, @RequestBody DevolverActivoRequestDto requestDto) {
+		ActaEntregaRecepcion acta = actaUseCase.devolver(id, requestDto.getMotivo());
+		return mapper.toResponseDto(acta);
+	}
+
+	@PostMapping("/devolver-todo-empleado")
+	public List<ActaEntregaRecepcionResponseDto> devolverTodoEmpleado(@Valid @RequestBody DevolverTodoEmpleadoRequestDto requestDto) {
+		return actaUseCase.devolverTodoEmpleado(requestDto.getIdEmpleado(), requestDto.getMotivo()).stream()
+				.map(mapper::toResponseDto).toList();
 	}
 
 }
