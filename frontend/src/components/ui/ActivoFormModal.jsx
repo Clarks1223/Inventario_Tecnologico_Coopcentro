@@ -32,6 +32,10 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
   const titleId = useId();
   const contentId = useId();
 
+  const oficinasSeleccionables = oficinas.filter(
+    (of) => of.activo || of.id_oficina === baseData.id_oficina,
+  );
+
   return (
     <>
       <Dialog
@@ -75,9 +79,10 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 }
               >
                 <MenuItem value=""><em>Ninguna</em></MenuItem>
-                {oficinas.map((of) => (
+                {oficinasSeleccionables.map((of) => (
                   <MenuItem key={of.id_oficina} value={of.id_oficina}>
                     {of.nombre}
+                    {!of.activo ? ' (Inactiva)' : ''}
                   </MenuItem>
                 ))}
               </TextField>
@@ -109,6 +114,18 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 value={baseData.serial || ''}
                 onChange={(e) =>
                   setBaseData({ ...baseData, serial: e.target.value })
+                }
+                disabled={isEditing}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <TextField
+                label="Código de Inventario"
+                fullWidth
+                value={baseData.codigo_inventario || ''}
+                onChange={(e) =>
+                  setBaseData({ ...baseData, codigo_inventario: e.target.value })
                 }
                 disabled={isEditing}
               />

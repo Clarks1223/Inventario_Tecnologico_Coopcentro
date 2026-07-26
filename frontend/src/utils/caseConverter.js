@@ -17,3 +17,17 @@ const transform = (value, keyFn) => {
 
 export const keysToCamel = (value) => transform(value, snakeToCamelKey);
 export const keysToSnake = (value) => transform(value, camelToSnakeKey);
+
+const trimValue = (value) => {
+  if (Array.isArray(value)) return value.map(trimValue);
+  if (isPlainObject(value)) {
+    return Object.entries(value).reduce((acc, [key, val]) => {
+      acc[key] = trimValue(val);
+      return acc;
+    }, {});
+  }
+  if (typeof value === 'string') return value.trim();
+  return value;
+};
+
+export const trimStrings = (value) => trimValue(value);

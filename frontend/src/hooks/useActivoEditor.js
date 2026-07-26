@@ -54,6 +54,7 @@ export const useActivoEditor = (onSaveSuccess) => {
         if (typeof data === 'string') return data;
         if (Array.isArray(data)) return extractErrorMessage(data[0]);
         if (typeof data === 'object' && data !== null) {
+          if (typeof data.message === 'string') return data.message;
           const values = Object.values(data);
           if (values.length > 0) return extractErrorMessage(values[0]);
         }

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { keysToCamel, keysToSnake } from '../utils/caseConverter';
+import { keysToCamel, keysToSnake, trimStrings } from '../utils/caseConverter';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -10,7 +10,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (config.data && !(config.data instanceof FormData)) {
-    config.data = keysToCamel(config.data);
+    config.data = keysToCamel(trimStrings(config.data));
   }
   return config;
 });

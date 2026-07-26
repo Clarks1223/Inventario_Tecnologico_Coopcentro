@@ -97,6 +97,8 @@ const Asignaciones = () => {
     ? empleados.filter((e) => e.id_oficina === oficinaFiltro)
     : empleados;
 
+  const empleadosActivosDeOficina = empleadosDeOficina.filter((e) => e.activo);
+
   const handleOficinaFiltroChange = (idOficina) => {
     setOficinaFiltro(idOficina || null);
     const empleadoActual = empleados.find(
@@ -264,7 +266,7 @@ const Asignaciones = () => {
             Procesado por: {sesion?.nombre} {sesion?.apellido}
           </Typography>
           <Autocomplete
-            options={empleadosDeOficina}
+            options={empleadosActivosDeOficina}
             getOptionLabel={(option) => `${option.nombre} ${option.apellido}`}
             isOptionEqualToValue={(option, value) =>
               option.id_empleado === value.id_empleado

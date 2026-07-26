@@ -20,6 +20,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormHelperText,
   TablePagination,
   Autocomplete,
 } from '@mui/material';
@@ -43,6 +44,7 @@ const Empleados = () => {
     rowsPerPage,
     oficinas,
     cargos,
+    usuarioTiDeEmpleado,
     open,
     setOpen,
     currentEmpleado,
@@ -61,6 +63,14 @@ const Empleados = () => {
     openDialog,
     handleExportExcel,
   } = useEmpleados();
+
+  const oficinasSeleccionables = oficinas.filter(
+    (of) => of.activo || of.id_oficina === currentEmpleado.id_oficina,
+  );
+
+  const cargosSeleccionables = cargos.filter(
+    (c) => c.activo || c.id_cargo === currentEmpleado.id_cargo,
+  );
 
   return (
     <Box>
@@ -314,8 +324,12 @@ const Empleados = () => {
             }
           />
           <Autocomplete
-            options={cargos}
-            getOptionLabel={(option) => option.nombre || ''}
+            options={cargosSeleccionables}
+            getOptionLabel={(option) =>
+              option.nombre
+                ? `${option.nombre}${!option.activo ? ' (Inactivo)' : ''}`
+                : ''
+            }
             isOptionEqualToValue={(option, value) =>
               option.id_cargo === value.id_cargo
             }
@@ -344,12 +358,42 @@ const Empleados = () => {
                 })
               }
             >
-              {oficinas.map((of) => (
+              {oficinasSeleccionables.map((of) => (
                 <MenuItem key={of.id_oficina} value={of.id_oficina}>
                   {of.nombre}
+                  {!of.activo ? ' (Inactiva)' : ''}
                 </MenuItem>
               ))}
             </Select>
+          </FormControl>
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Rol</InputLabel>
+            <Select
+              value={currentEmpleado.rol || 'usuario'}
+              label="Rol"
+              onChange={(e) =>
+                setCurrentEmpleado({
+                  ...currentEmpleado,
+                  rol: e.target.value,
+                })
+              }
+            >
+              <MenuItem value="usuario">
+                Usuario (sin acceso a la plataforma)
+              </MenuItem>
+              <MenuItem value="administrador">
+                Administrador (con acceso a la plataforma)
+              </MenuItem>
+            </Select>
+            <FormHelperText>
+              {currentEmpleado.rol === 'administrador'
+                ? isEdit && usuarioTiDeEmpleado(currentEmpleado.id_empleado)
+                  ? 'Ya cuenta con acceso a la plataforma.'
+                  : 'Se creará un acceso a la plataforma con el correo indicado (contraseña inicial: la cédula).'
+                : isEdit && usuarioTiDeEmpleado(currentEmpleado.id_empleado)
+                  ? 'Se revocará el acceso a la plataforma al guardar.'
+                  : ''}
+            </FormHelperText>
           </FormControl>
         </DialogContent>
         <DialogActions>

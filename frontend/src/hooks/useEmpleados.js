@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { empleadosService } from '../services/empleadosService';
+import { usuariosTiService } from '../services/usuariosTiService';
 import { useSnackbar } from './useSnackbar';
 import axios from 'axios';
 
@@ -12,6 +13,7 @@ const emptyEmpleado = {
   extension_telefonica: '',
   id_cargo: '',
   id_oficina: '',
+  rol: 'usuario',
 };
 
 export const useEmpleados = () => {
@@ -21,6 +23,7 @@ export const useEmpleados = () => {
   const [rowsPerPage] = useState(10);
   const [oficinas, setOficinas] = useState([]);
   const [cargos, setCargos] = useState([]);
+  const [usuariosTi, setUsuariosTi] = useState([]);
   const [open, setOpen] = useState(false);
   const [currentEmpleado, setCurrentEmpleado] = useState(emptyEmpleado);
   const [isEdit, setIsEdit] = useState(false);
@@ -67,6 +70,15 @@ export const useEmpleados = () => {
     }
   }, []);
 
+  const fetchUsuariosTi = useCallback(async () => {
+    try {
+      const response = await usuariosTiService.getUsuariosTi();
+      setUsuariosTi(response.data || []);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     fetchEmpleados(controller.signal);
@@ -76,10 +88,15 @@ export const useEmpleados = () => {
   useEffect(() => {
     fetchOficinas();
     fetchCargos();
-  }, [fetchOficinas, fetchCargos]);
+    fetchUsuariosTi();
+  }, [fetchOficinas, fetchCargos, fetchUsuariosTi]);
 
   const cargoNombre = useCallback((id) => cargos.find((c) => c.id_cargo === id)?.nombre || '', [cargos]);
   const oficinaNombre = useCallback((id) => oficinas.find((o) => o.id_oficina === id)?.nombre || '', [oficinas]);
+  const usuarioTiDeEmpleado = useCallback(
+    (idEmpleado) => usuariosTi.find((u) => u.id_empleado === idEmpleado),
+    [usuariosTi]
+  );
 
   const filteredEmpleados = useMemo(() => {
     return allEmpleados
@@ -100,20 +117,47 @@ export const useEmpleados = () => {
 
   const handleSave = useCallback(async () => {
     try {
+      let idEmpleado = currentEmpleado.id_empleado;
       if (isEdit) {
-        await empleadosService.updateEmpleado(currentEmpleado.id_empleado, currentEmpleado);
+        await empleadosService.updateEmpleado(idEmpleado, currentEmpleado);
       } else {
-        await empleadosService.createEmpleado({ ...currentEmpleado, activo: true });
+        const creado = await empleadosService.createEmpleado({ ...currentEmpleado, activo: true });
+        idEmpleado = creado.data.id_empleado;
       }
+
+      const usuarioTiActual = usuarioTiDeEmpleado(idEmpleado);
+      if (currentEmpleado.rol === 'administrador' && !usuarioTiActual) {
+        try {
+          await usuariosTiService.createUsuarioTi({ id_empleado: idEmpleado, correo: currentEmpleado.correo });
+        } catch (accesoError) {
+          showSnackbar(
+            'Empleado guardado, pero no se pudo otorgar acceso a la plataforma: ' +
+              (accesoError.response?.data?.message || accesoError.message),
+            'warning'
+          );
+        }
+      } else if (currentEmpleado.rol !== 'administrador' && usuarioTiActual) {
+        try {
+          await usuariosTiService.deleteUsuarioTi(usuarioTiActual.id_usuario_ti);
+        } catch (accesoError) {
+          showSnackbar(
+            'Empleado guardado, pero no se pudo revocar el acceso a la plataforma: ' +
+              (accesoError.response?.data?.message || accesoError.message),
+            'warning'
+          );
+        }
+      }
+
       fetchEmpleados();
+      fetchUsuariosTi();
       setOpen(false);
     } catch (error) {
       showSnackbar(
-        'Error al guardar: ' + JSON.stringify(error.response?.data || error.message),
+        'Error al guardar: ' + (error.response?.data?.message || error.message),
         'error'
       );
     }
-  }, [isEdit, currentEmpleado, fetchEmpleados, showSnackbar]);
+  }, [isEdit, currentEmpleado, usuarioTiDeEmpleado, fetchEmpleados, fetchUsuariosTi, showSnackbar]);
 
   const setActivo = useCallback(async (id, activo) => {
     try {
@@ -123,7 +167,7 @@ export const useEmpleados = () => {
       fetchEmpleados();
     } catch (error) {
       showSnackbar(
-        `Error al ${activo ? 'reactivar' : 'desactivar'}: ` + JSON.stringify(error.response?.data || error.message),
+        `Error al ${activo ? 'reactivar' : 'desactivar'}: ` + (error.response?.data?.message || error.message),
         'error'
       );
     }
@@ -218,6 +262,7 @@ export const useEmpleados = () => {
     rowsPerPage,
     oficinas,
     cargos,
+    usuarioTiDeEmpleado,
     open,
     setOpen,
     currentEmpleado,
