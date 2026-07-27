@@ -32,6 +32,16 @@ public class EmpleadoRepositorioImpl implements IEmpleadoRepositorio {
 	}
 
 	@Override
+	public Optional<Empleado> buscarPorCedula(String cedula) {
+		return jpaRepositorio.findByCedula(cedula).stream().findFirst().map(entityMapper::toDomain);
+	}
+
+	@Override
+	public Optional<Empleado> buscarPorCorreo(String correo) {
+		return jpaRepositorio.findByCorreo(correo).map(entityMapper::toDomain);
+	}
+
+	@Override
 	public List<Empleado> listarTodos() {
 		return jpaRepositorio.findAll().stream().map(entityMapper::toDomain).toList();
 	}

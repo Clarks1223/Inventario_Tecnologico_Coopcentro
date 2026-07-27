@@ -8,6 +8,8 @@ import com.uisrael.inventario.dominio.entidades.Empleado;
 public interface IEmpleadoRepositorio {
 	Empleado guardar(Empleado nuevoEmpleado);
 	Optional<Empleado> buscarPorId(int idEmpleado);
+	Optional<Empleado> buscarPorCedula(String cedula);
+	Optional<Empleado> buscarPorCorreo(String correo);
 	List<Empleado> listarTodos();
 	void eliminar(int idEmpleado);
 }

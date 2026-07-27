@@ -6,25 +6,90 @@ import java.util.Optional;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoUseCase;
 import com.uisrael.inventario.dominio.entidades.Activo;
 import com.uisrael.inventario.dominio.entidades.ActivoDetalle;
+import com.uisrael.inventario.dominio.entidades.Oficina;
 import com.uisrael.inventario.dominio.repositorios.IActivoDetalleRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IActivoRepositorio;
+import com.uisrael.inventario.dominio.repositorios.IOficinaRepositorio;
 
 public class ActivoUseCaseImpl implements IActivoUseCase {
 
 	private final IActivoRepositorio repositorio;
 	private final IActivoDetalleRepositorio detalleRepositorio;
+	private final IOficinaRepositorio oficinaRepositorio;
 
-	public ActivoUseCaseImpl(IActivoRepositorio repositorio, IActivoDetalleRepositorio detalleRepositorio) {
+	public ActivoUseCaseImpl(IActivoRepositorio repositorio, IActivoDetalleRepositorio detalleRepositorio,
+			IOficinaRepositorio oficinaRepositorio) {
 		this.repositorio = repositorio;
 		this.detalleRepositorio = detalleRepositorio;
+		this.oficinaRepositorio = oficinaRepositorio;
 	}
 
 	@Override
 	public Activo guardar(Activo nuevoActivo, ActivoDetalle detalle) {
+		Oficina oficina = oficinaRepositorio.buscarPorId(nuevoActivo.getIdOficina())
+				.orElseThrow(() -> new RuntimeException("Oficina no encontrada"));
+
+		boolean esAsignacionNueva = repositorio.buscarPorId(nuevoActivo.getIdActivo())
+				.map(actual -> actual.getIdOficina() != nuevoActivo.getIdOficina())
+				.orElse(true);
+		if (esAsignacionNueva && !oficina.isActivo()) {
+			throw new RuntimeException("La oficina esta inactiva y no puede recibir nuevas asignaciones");
+		}
+
+		repositorio.buscarPorSerial(nuevoActivo.getSerial())
+				.filter(existente -> existente.getIdActivo() != nuevoActivo.getIdActivo())
+				.ifPresent(existente -> {
+					throw new RuntimeException("Ya existe un activo registrado con ese serial");
+				});
+
+		repositorio.buscarPorCodigoInventario(nuevoActivo.getCodigoInventario())
+				.filter(existente -> existente.getIdActivo() != nuevoActivo.getIdActivo())
+				.ifPresent(existente -> {
+					throw new RuntimeException("Ya existe un activo registrado con ese codigo de inventario");
+				});
+
+		ActivoDetalle detalleRelevante = filtrarDetallePorTipo(nuevoActivo.getTipoActivo(), detalle, nuevoActivo.getIdActivo());
+		normalizarBlancosANull(detalleRelevante);
+		validarUnicidadDetalle(detalleRelevante);
+
 		Activo guardado = repositorio.guardar(nuevoActivo);
-		ActivoDetalle detalleRelevante = filtrarDetallePorTipo(guardado.getTipoActivo(), detalle, guardado.getIdActivo());
+		detalleRelevante.setIdActivo(guardado.getIdActivo());
 		detalleRepositorio.guardar(detalleRelevante);
 		return guardado;
+	}
+
+	private void normalizarBlancosANull(ActivoDetalle detalle) {
+		detalle.setImei(blancoANull(detalle.getImei()));
+		detalle.setIp(blancoANull(detalle.getIp()));
+		detalle.setDominio(blancoANull(detalle.getDominio()));
+	}
+
+	private String blancoANull(String valor) {
+		return (valor == null || valor.isBlank()) ? null : valor;
+	}
+
+	private void validarUnicidadDetalle(ActivoDetalle detalle) {
+		if (detalle.getImei() != null) {
+			detalleRepositorio.buscarPorImei(detalle.getImei())
+					.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
+					.ifPresent(existente -> {
+						throw new RuntimeException("Ya existe un activo registrado con ese IMEI");
+					});
+		}
+		if (detalle.getIp() != null) {
+			detalleRepositorio.buscarPorIp(detalle.getIp())
+					.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
+					.ifPresent(existente -> {
+						throw new RuntimeException("Ya existe un activo registrado con esa IP");
+					});
+		}
+		if (detalle.getDominio() != null) {
+			detalleRepositorio.buscarPorDominio(detalle.getDominio())
+					.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
+					.ifPresent(existente -> {
+						throw new RuntimeException("Ya existe un activo registrado con ese dominio");
+					});
+		}
 	}
 
 	@Override

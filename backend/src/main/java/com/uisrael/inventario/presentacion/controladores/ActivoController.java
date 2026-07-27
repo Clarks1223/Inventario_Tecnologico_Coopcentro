@@ -2,6 +2,9 @@ package com.uisrael.inventario.presentacion.controladores;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoDetalleUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoUseCase;
 import com.uisrael.inventario.dominio.entidades.Activo;
 import com.uisrael.inventario.dominio.entidades.ActivoDetalle;
@@ -30,11 +34,14 @@ import jakarta.validation.Valid;
 public class ActivoController {
 
 	private final IActivoUseCase activoUseCase;
+	private final IActivoDetalleUseCase activoDetalleUseCase;
 	private final IActivoDtoMapper mapper;
 	private final IActivoDetalleDtoMapper detalleMapper;
 
-	public ActivoController(IActivoUseCase activoUseCase, IActivoDtoMapper mapper, IActivoDetalleDtoMapper detalleMapper) {
+	public ActivoController(IActivoUseCase activoUseCase, IActivoDetalleUseCase activoDetalleUseCase,
+			IActivoDtoMapper mapper, IActivoDetalleDtoMapper detalleMapper) {
 		this.activoUseCase = activoUseCase;
+		this.activoDetalleUseCase = activoDetalleUseCase;
 		this.mapper = mapper;
 		this.detalleMapper = detalleMapper;
 	}
@@ -52,7 +59,19 @@ public class ActivoController {
 
 	@GetMapping
 	public List<ActivoResponseDto> listarTodos() {
-		return activoUseCase.listarTodos().stream().map(mapper::toResponseDto).toList();
+		Map<Integer, ActivoDetalle> detallesPorActivo = activoDetalleUseCase.listarTodos().stream()
+				.collect(Collectors.toMap(ActivoDetalle::getIdActivo, Function.identity()));
+
+		return activoUseCase.listarTodos().stream()
+				.map(mapper::toResponseDto)
+				.map(responseDto -> {
+					ActivoDetalle detalle = detallesPorActivo.get(responseDto.getIdActivo());
+					if (detalle != null) {
+						responseDto.setDetalle(detalleMapper.toResponseDto(detalle));
+					}
+					return responseDto;
+				})
+				.toList();
 	}
 
 	@GetMapping("/{id}")

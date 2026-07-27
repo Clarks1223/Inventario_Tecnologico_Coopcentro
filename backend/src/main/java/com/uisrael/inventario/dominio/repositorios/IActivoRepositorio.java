@@ -8,6 +8,8 @@ import com.uisrael.inventario.dominio.entidades.Activo;
 public interface IActivoRepositorio {
 	Activo guardar(Activo nuevoActivo);
 	Optional<Activo> buscarPorId(int idActivo);
+	Optional<Activo> buscarPorSerial(String serial);
+	Optional<Activo> buscarPorCodigoInventario(String codigoInventario);
 	List<Activo> listarTodos();
 	void eliminar(int idActivo);
 }

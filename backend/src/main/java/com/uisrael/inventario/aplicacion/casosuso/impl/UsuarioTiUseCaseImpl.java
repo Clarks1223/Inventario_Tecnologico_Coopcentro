@@ -34,6 +34,8 @@ public class UsuarioTiUseCaseImpl implements IUsuarioTiUseCase {
 			usuarioTi.setFechaCreacion(ahora);
 			usuarioTi.setFechaActualizacion(ahora);
 		} else {
+			empleadoRepositorio.buscarPorId(usuarioTi.getIdEmpleado())
+					.orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
 			UsuarioTi existente = repositorio.buscarPorId(usuarioTi.getIdUsuarioTi())
 					.orElseThrow(() -> new RuntimeException("UsuarioTi no encontrado"));
 			usuarioTi.setContrasena(existente.getContrasena());

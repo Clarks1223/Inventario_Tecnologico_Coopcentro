@@ -17,10 +17,10 @@ public class OficinaEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int idOficina;
 
-	@Column(name = "nombre", length = 150)
+	@Column(name = "nombre", length = 20)
 	private String nombre;
 
-	@Column(name = "direccion", length = 150)
+	@Column(name = "direccion", length = 100)
 	private String direccion;
 
 	private boolean activo;

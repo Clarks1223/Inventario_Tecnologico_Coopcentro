@@ -26,10 +26,10 @@ public class EmpleadoEntity {
 	@Column(name = "apellido", length = 100)
 	private String apellido;
 
-	@Column(name = "cedula", length = 20)
+	@Column(name = "cedula", length = 20, unique = true)
 	private String cedula;
 
-	@Column(name = "correo", length = 254)
+	@Column(name = "correo", length = 254, unique = true)
 	private String correo;
 
 	@Column(name = "extension_telefonica", length = 20)

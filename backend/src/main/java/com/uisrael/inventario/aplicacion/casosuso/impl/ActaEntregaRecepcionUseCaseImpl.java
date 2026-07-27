@@ -7,8 +7,12 @@ import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaDocumentoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionUseCase;
 import com.uisrael.inventario.dominio.entidades.Activo;
 import com.uisrael.inventario.dominio.entidades.ActaEntregaRecepcion;
+import com.uisrael.inventario.dominio.entidades.Empleado;
+import com.uisrael.inventario.dominio.entidades.UsuarioTi;
 import com.uisrael.inventario.dominio.repositorios.IActaEntregaRecepcionRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IActivoRepositorio;
+import com.uisrael.inventario.dominio.repositorios.IEmpleadoRepositorio;
+import com.uisrael.inventario.dominio.repositorios.IUsuarioTiRepositorio;
 
 public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUseCase {
 
@@ -17,12 +21,17 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 
 	private final IActaEntregaRecepcionRepositorio repositorio;
 	private final IActivoRepositorio activoRepositorio;
+	private final IEmpleadoRepositorio empleadoRepositorio;
+	private final IUsuarioTiRepositorio usuarioTiRepositorio;
 	private final IActaDocumentoUseCase actaDocumentoUseCase;
 
 	public ActaEntregaRecepcionUseCaseImpl(IActaEntregaRecepcionRepositorio repositorio, IActivoRepositorio activoRepositorio,
+			IEmpleadoRepositorio empleadoRepositorio, IUsuarioTiRepositorio usuarioTiRepositorio,
 			IActaDocumentoUseCase actaDocumentoUseCase) {
 		this.repositorio = repositorio;
 		this.activoRepositorio = activoRepositorio;
+		this.empleadoRepositorio = empleadoRepositorio;
+		this.usuarioTiRepositorio = usuarioTiRepositorio;
 		this.actaDocumentoUseCase = actaDocumentoUseCase;
 	}
 
@@ -38,11 +47,6 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 		} catch (RuntimeException e) {
 			System.err.println("No se pudo generar el PDF del acta " + idActa + ": " + e.getMessage());
 		}
-	}
-
-	@Override
-	public ActaEntregaRecepcion guardar(ActaEntregaRecepcion nuevaActa) {
-		return repositorio.guardar(nuevaActa);
 	}
 
 	@Override
@@ -68,6 +72,20 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 
 		if (!"NO_ASIGNADO".equals(activo.getEstado())) {
 			throw new RuntimeException("El activo no esta disponible para asignar");
+		}
+
+		Empleado empleado = empleadoRepositorio.buscarPorId(idEmpleado)
+				.orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
+		if (!empleado.isActivo()) {
+			throw new RuntimeException("El empleado no esta activo");
+		}
+
+		UsuarioTi usuarioTi = usuarioTiRepositorio.buscarPorId(idUsuarioTi)
+				.orElseThrow(() -> new RuntimeException("Usuario TI no encontrado"));
+		Empleado empleadoTi = empleadoRepositorio.buscarPorId(usuarioTi.getIdEmpleado())
+				.orElseThrow(() -> new RuntimeException("Empleado de TI no encontrado"));
+		if (!empleadoTi.isActivo()) {
+			throw new RuntimeException("El usuario TI no esta activo");
 		}
 
 		ActaEntregaRecepcion acta = new ActaEntregaRecepcion();
@@ -120,6 +138,8 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 
 	@Override
 	public List<ActaEntregaRecepcion> devolverTodoEmpleado(int idEmpleado, String motivo) {
+		empleadoRepositorio.buscarPorId(idEmpleado)
+				.orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
 		return repositorio.listarTodos().stream()
 				.filter(acta -> acta.getIdEmpleado() == idEmpleado)
 				.filter(acta -> ESTADO_ACTIVA.equals(acta.getEstadoAsignacion()))

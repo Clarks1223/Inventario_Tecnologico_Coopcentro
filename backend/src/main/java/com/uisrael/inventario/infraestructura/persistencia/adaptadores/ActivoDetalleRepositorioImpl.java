@@ -32,6 +32,21 @@ public class ActivoDetalleRepositorioImpl implements IActivoDetalleRepositorio {
 	}
 
 	@Override
+	public Optional<ActivoDetalle> buscarPorImei(String imei) {
+		return jpaRepositorio.findByImei(imei).map(entityMapper::toDomain);
+	}
+
+	@Override
+	public Optional<ActivoDetalle> buscarPorIp(String ip) {
+		return jpaRepositorio.findByIp(ip).map(entityMapper::toDomain);
+	}
+
+	@Override
+	public Optional<ActivoDetalle> buscarPorDominio(String dominio) {
+		return jpaRepositorio.findByDominio(dominio).map(entityMapper::toDomain);
+	}
+
+	@Override
 	public List<ActivoDetalle> listarTodos() {
 		return jpaRepositorio.findAll().stream().map(entityMapper::toDomain).toList();
 	}

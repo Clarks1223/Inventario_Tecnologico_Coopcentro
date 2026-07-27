@@ -8,6 +8,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.module.SimpleModule;
+
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaDocumentoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoDetalleUseCase;
@@ -65,6 +72,24 @@ public class InventarioConfig {
 		return new BCryptPasswordEncoder();
 	}
 
+	/**
+	 * Recorta espacios en blanco al inicio/fin de todo String recibido en el
+	 * cuerpo de las peticiones JSON, antes de que se ejecuten las validaciones
+	 * (@NotBlank, @Size, @Pattern, etc.) y de que el valor llegue a persistirse.
+	 */
+	@Bean
+	JacksonModule trimmingModule() {
+		SimpleModule module = new SimpleModule();
+		module.addDeserializer(String.class, new ValueDeserializer<String>() {
+			@Override
+			public String deserialize(JsonParser parser, DeserializationContext ctxt) throws JacksonException {
+				String valor = parser.getValueAsString();
+				return valor == null ? null : valor.trim();
+			}
+		});
+		return module;
+	}
+
 	@Bean
 	WebMvcConfigurer corsConfigurer() {
 		return new WebMvcConfigurer() {
@@ -104,8 +129,9 @@ public class InventarioConfig {
 	}
 
 	@Bean
-	IEmpleadoUseCase empleadoUseCase(IEmpleadoRepositorio repositorio) {
-		return new EmpleadoUseCaseImpl(repositorio);
+	IEmpleadoUseCase empleadoUseCase(IEmpleadoRepositorio repositorio, IOficinaRepositorio oficinaRepositorio,
+			ICargoRepositorio cargoRepositorio, IActaEntregaRecepcionRepositorio actaEntregaRecepcionRepositorio) {
+		return new EmpleadoUseCaseImpl(repositorio, oficinaRepositorio, cargoRepositorio, actaEntregaRecepcionRepositorio);
 	}
 
 	@Bean
@@ -124,8 +150,9 @@ public class InventarioConfig {
 	}
 
 	@Bean
-	IActivoUseCase activoUseCase(IActivoRepositorio repositorio, IActivoDetalleRepositorio detalleRepositorio) {
-		return new ActivoUseCaseImpl(repositorio, detalleRepositorio);
+	IActivoUseCase activoUseCase(IActivoRepositorio repositorio, IActivoDetalleRepositorio detalleRepositorio,
+			IOficinaRepositorio oficinaRepositorio) {
+		return new ActivoUseCaseImpl(repositorio, detalleRepositorio, oficinaRepositorio);
 	}
 
 	@Bean
@@ -150,8 +177,10 @@ public class InventarioConfig {
 
 	@Bean
 	IActaEntregaRecepcionUseCase actaEntregaRecepcionUseCase(IActaEntregaRecepcionRepositorio repositorio, IActivoRepositorio activoRepositorio,
+			IEmpleadoRepositorio empleadoRepositorio, IUsuarioTiRepositorio usuarioTiRepositorio,
 			IActaDocumentoUseCase actaDocumentoUseCase) {
-		return new ActaEntregaRecepcionUseCaseImpl(repositorio, activoRepositorio, actaDocumentoUseCase);
+		return new ActaEntregaRecepcionUseCaseImpl(repositorio, activoRepositorio, empleadoRepositorio, usuarioTiRepositorio,
+				actaDocumentoUseCase);
 	}
 
 	@Bean

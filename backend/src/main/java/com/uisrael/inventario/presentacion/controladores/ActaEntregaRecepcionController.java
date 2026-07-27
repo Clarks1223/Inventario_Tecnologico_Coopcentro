@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaDocumentoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionUseCase;
 import com.uisrael.inventario.dominio.entidades.ActaEntregaRecepcion;
-import com.uisrael.inventario.presentacion.dto.request.ActaEntregaRecepcionRequestDto;
 import com.uisrael.inventario.presentacion.dto.request.AsignarActivoRequestDto;
 import com.uisrael.inventario.presentacion.dto.request.DevolverActivoRequestDto;
 import com.uisrael.inventario.presentacion.dto.request.DevolverTodoEmpleadoRequestDto;
@@ -43,13 +41,6 @@ public class ActaEntregaRecepcionController {
 		this.mapper = mapper;
 	}
 
-	@PostMapping
-	@ResponseStatus(HttpStatus.CREATED)
-	public ActaEntregaRecepcionResponseDto guardar(@Valid @RequestBody ActaEntregaRecepcionRequestDto requestDto) {
-		ActaEntregaRecepcion acta = mapper.toDomain(requestDto);
-		return mapper.toResponseDto(actaUseCase.guardar(acta));
-	}
-
 	@GetMapping
 	public List<ActaEntregaRecepcionResponseDto> listarTodos() {
 		return actaUseCase.listarTodos().stream().map(mapper::toResponseDto).toList();
@@ -58,13 +49,6 @@ public class ActaEntregaRecepcionController {
 	@GetMapping("/{id}")
 	public ActaEntregaRecepcionResponseDto buscarPorId(@PathVariable("id") int id) {
 		return mapper.toResponseDto(actaUseCase.buscarPorId(id));
-	}
-
-	@PutMapping("/{id}")
-	public ActaEntregaRecepcionResponseDto actualizar(@PathVariable("id") int id, @Valid @RequestBody ActaEntregaRecepcionRequestDto requestDto) {
-		ActaEntregaRecepcion acta = mapper.toDomain(requestDto);
-		acta.setIdActa(id);
-		return mapper.toResponseDto(actaUseCase.guardar(acta));
 	}
 
 	@DeleteMapping("/{id}")
@@ -91,7 +75,7 @@ public class ActaEntregaRecepcionController {
 	}
 
 	@PostMapping("/{id}/devolver")
-	public ActaEntregaRecepcionResponseDto devolver(@PathVariable("id") int id, @RequestBody DevolverActivoRequestDto requestDto) {
+	public ActaEntregaRecepcionResponseDto devolver(@PathVariable("id") int id, @Valid @RequestBody DevolverActivoRequestDto requestDto) {
 		ActaEntregaRecepcion acta = actaUseCase.devolver(id, requestDto.getMotivo());
 		return mapper.toResponseDto(acta);
 	}

@@ -25,7 +25,7 @@ public class ActivoEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int idActivo;
 
-	@Column(name = "codigo_inventario", length = 50)
+	@Column(name = "codigo_inventario", length = 50, unique = true)
 	private String codigoInventario;
 
 	@Column(name = "tipo_activo", length = 50)
@@ -37,7 +37,7 @@ public class ActivoEntity {
 	@Column(name = "modelo", length = 100)
 	private String modelo;
 
-	@Column(name = "serial", length = 100)
+	@Column(name = "serial", length = 100, unique = true)
 	private String serial;
 
 	@Column(name = "estado", length = 50)

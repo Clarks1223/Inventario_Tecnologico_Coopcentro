@@ -3,6 +3,7 @@ package com.uisrael.inventario.infraestructura.configuracion;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -18,33 +19,35 @@ import com.uisrael.inventario.infraestructura.repositorios.IUsuarioTiJpaReposito
 
 /**
  * Garantiza que la oficina "Matriz", el cargo "Analista de Software", el
- * empleado Pablo Uchuari y su acceso (usuarios_ti) existan cada vez que
- * arranca la app. Idempotente: verifica por nombre/cedula/correo antes de
- * insertar, para no duplicar en cada reinicio (no hay Flyway/Liquibase que
- * controle esto).
+ * empleado, su acceso (usuarios_ti) existan cada vez que
+ * arranca la app.
  */
 @Component
 public class DatosInicialesSeeder implements CommandLineRunner {
 
 	private static final String NOMBRE_OFICINA_MATRIZ = "Matriz";
 	private static final String NOMBRE_CARGO_ANALISTA = "Analista de Software";
-	private static final String CEDULA_PABLO = "1726603739";
-	private static final String CORREO_PABLO = "pablo.uchuari@coopcentro.fin.ec";
 
 	private final IOficinaJpaRepositorio oficinaRepositorio;
 	private final ICargoJpaRepositorio cargoRepositorio;
 	private final IEmpleadoJpaRepositorio empleadoRepositorio;
 	private final IUsuarioTiJpaRepositorio usuarioTiRepositorio;
 	private final PasswordEncoder passwordEncoder;
+	private final String cedulaAdmin;
+	private final String correoAdmin;
 
 	public DatosInicialesSeeder(IOficinaJpaRepositorio oficinaRepositorio, ICargoJpaRepositorio cargoRepositorio,
 			IEmpleadoJpaRepositorio empleadoRepositorio, IUsuarioTiJpaRepositorio usuarioTiRepositorio,
-			PasswordEncoder passwordEncoder) {
+			PasswordEncoder passwordEncoder,
+			@Value("${app.seed.admin-cedula}") String cedulaAdmin,
+			@Value("${app.seed.admin-correo}") String correoAdmin) {
 		this.oficinaRepositorio = oficinaRepositorio;
 		this.cargoRepositorio = cargoRepositorio;
 		this.empleadoRepositorio = empleadoRepositorio;
 		this.usuarioTiRepositorio = usuarioTiRepositorio;
 		this.passwordEncoder = passwordEncoder;
+		this.cedulaAdmin = cedulaAdmin;
+		this.correoAdmin = correoAdmin;
 	}
 
 	@Override
@@ -78,15 +81,15 @@ public class DatosInicialesSeeder implements CommandLineRunner {
 	}
 
 	private EmpleadoEntity obtenerOCrearEmpleadoPablo(OficinaEntity oficina, CargoEntity cargo) {
-		List<EmpleadoEntity> existentes = empleadoRepositorio.findByCedula(CEDULA_PABLO);
+		List<EmpleadoEntity> existentes = empleadoRepositorio.findByCedula(cedulaAdmin);
 		if (!existentes.isEmpty()) {
 			return existentes.get(0);
 		}
 		EmpleadoEntity empleado = new EmpleadoEntity();
 		empleado.setNombre("Pablo");
 		empleado.setApellido("Uchuari");
-		empleado.setCedula(CEDULA_PABLO);
-		empleado.setCorreo(CORREO_PABLO);
+		empleado.setCedula(cedulaAdmin);
+		empleado.setCorreo(correoAdmin);
 		empleado.setExtensionTelefonica("1043");
 		empleado.setOficina(oficina);
 		empleado.setCargo(cargo);
@@ -96,13 +99,13 @@ public class DatosInicialesSeeder implements CommandLineRunner {
 	}
 
 	private void obtenerOCrearUsuarioTiPablo(EmpleadoEntity empleado) {
-		if (usuarioTiRepositorio.findByCorreo(CORREO_PABLO).isPresent()) {
+		if (usuarioTiRepositorio.findByCorreo(correoAdmin).isPresent()) {
 			return;
 		}
 		LocalDateTime ahora = LocalDateTime.now();
 		UsuarioTiEntity usuarioTi = new UsuarioTiEntity();
 		usuarioTi.setEmpleado(empleado);
-		usuarioTi.setCorreo(CORREO_PABLO);
+		usuarioTi.setCorreo(correoAdmin);
 		usuarioTi.setContrasena(passwordEncoder.encode(empleado.getCedula()));
 		usuarioTi.setFechaCreacion(ahora);
 		usuarioTi.setFechaActualizacion(ahora);

@@ -59,7 +59,7 @@ public class ActivoDetalleEntity implements Persistable<Integer> {
 	@Column(name = "sistema_operativo", length = 100)
 	private String sistemaOperativo;
 
-	@Column(name = "imei", length = 50)
+	@Column(name = "imei", length = 50, unique = true)
 	private String imei;
 
 	@Column(name = "numero_linea", length = 20)
@@ -74,11 +74,11 @@ public class ActivoDetalleEntity implements Persistable<Integer> {
 	@Column(name = "tipo_almacenamiento", length = 20)
 	private String tipoAlmacenamiento;
 
-	@Column(name = "ip", columnDefinition = "inet")
+	@Column(name = "ip", columnDefinition = "inet", unique = true)
 	@JdbcTypeCode(SqlTypes.INET)
 	private String ip;
 
-	@Column(name = "dominio", length = 150)
+	@Column(name = "dominio", length = 150, unique = true)
 	private String dominio;
 
 	@Column(name = "almacenamiento_gb")

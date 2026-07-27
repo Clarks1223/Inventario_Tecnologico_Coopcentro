@@ -32,6 +32,16 @@ public class ActivoRepositorioImpl implements IActivoRepositorio {
 	}
 
 	@Override
+	public Optional<Activo> buscarPorSerial(String serial) {
+		return jpaRepositorio.findBySerial(serial).map(entityMapper::toDomain);
+	}
+
+	@Override
+	public Optional<Activo> buscarPorCodigoInventario(String codigoInventario) {
+		return jpaRepositorio.findByCodigoInventario(codigoInventario).map(entityMapper::toDomain);
+	}
+
+	@Override
 	public List<Activo> listarTodos() {
 		return jpaRepositorio.findAll().stream().map(entityMapper::toDomain).toList();
 	}
