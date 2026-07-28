@@ -6,14 +6,17 @@ import {
   Typography,
   TextField,
   Button,
+  Link,
 } from '@mui/material';
 import { useSession } from '../hooks/useSession';
 import { useSnackbar } from '../hooks/useSnackbar';
+import SolicitarRecuperacionDialog from '../components/ui/SolicitarRecuperacionDialog';
 
 const Login = () => {
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [recuperacionAbierta, setRecuperacionAbierta] = useState(false);
   const session = useSession();
   const showSnackbar = useSnackbar();
   const navigate = useNavigate();
@@ -22,10 +25,14 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await session.login(correo, contrasena);
+      const sesion = await session.login(correo, contrasena);
+      showSnackbar(`Bienvenido, ${sesion.nombre} ${sesion.apellido}`, 'success');
       navigate('/');
-    } catch {
-      showSnackbar('Correo o contraseña incorrectos', 'error');
+    } catch (error) {
+      showSnackbar(
+        error.response?.data?.message || 'Usuario o contraseña incorrectos',
+        'error'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +83,21 @@ const Login = () => {
         >
           {isLoading ? 'Ingresando...' : 'Iniciar sesión'}
         </Button>
+        <Typography textAlign="center" sx={{ mt: 2 }}>
+          <Link
+            component="button"
+            type="button"
+            variant="body2"
+            onClick={() => setRecuperacionAbierta(true)}
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </Typography>
       </Paper>
+      <SolicitarRecuperacionDialog
+        open={recuperacionAbierta}
+        onClose={() => setRecuperacionAbierta(false)}
+      />
     </Box>
   );
 };

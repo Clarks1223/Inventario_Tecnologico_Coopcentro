@@ -31,8 +31,19 @@ export function SessionProvider({ children }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const updateSesion = useCallback((cambiosParciales) => {
+    setSesion((actual) => {
+      if (!actual) {
+        return actual;
+      }
+      const actualizada = { ...actual, ...cambiosParciales };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizada));
+      return actualizada;
+    });
+  }, []);
+
   return (
-    <SessionContext.Provider value={{ sesion, login, logout }}>
+    <SessionContext.Provider value={{ sesion, login, logout, updateSesion }}>
       {children}
     </SessionContext.Provider>
   );

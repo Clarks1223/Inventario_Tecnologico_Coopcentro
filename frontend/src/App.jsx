@@ -15,6 +15,7 @@ const Activos = lazy(() => import('./pages/Activos'));
 const Empleados = lazy(() => import('./pages/Empleados'));
 const Asignaciones = lazy(() => import('./pages/Asignaciones'));
 const Login = lazy(() => import('./pages/Login'));
+const RestablecerContrasena = lazy(() => import('./pages/RestablecerContrasena'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function ErrorFallback({ error, resetErrorBoundary }) {
@@ -40,6 +41,7 @@ function App() {
             <Suspense fallback={<LoadingSpinner message="Cargando..." />}>
               <Routes>
                 <Route path="login" element={<Login />} />
+                <Route path="restablecer-contrasena" element={<RestablecerContrasena />} />
                 <Route element={<RequireAuth />}>
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Dashboard />} />

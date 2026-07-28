@@ -23,7 +23,9 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import WorkIcon from '@mui/icons-material/Work';
 import LogoutIcon from '@mui/icons-material/Logout';
+import LockResetIcon from '@mui/icons-material/LockReset';
 import { useSession } from '../hooks/useSession';
+import CambiarContrasenaDialog from '../components/ui/CambiarContrasenaDialog';
 
 const drawerWidth = 240;
 
@@ -38,6 +40,7 @@ const menuItems = [
 
 const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [cambioContrasenaAbierto, setCambioContrasenaAbierto] = useState(false);
   const navigate = useNavigate();
   const { sesion, logout } = useSession();
 
@@ -119,6 +122,13 @@ const Layout = () => {
               </Typography>
               <Button
                 color="inherit"
+                startIcon={<LockResetIcon />}
+                onClick={() => setCambioContrasenaAbierto(true)}
+              >
+                Cambiar contraseña
+              </Button>
+              <Button
+                color="inherit"
                 startIcon={<LogoutIcon />}
                 onClick={handleLogout}
               >
@@ -174,6 +184,16 @@ const Layout = () => {
         <Toolbar />
         <Outlet />
       </Box>
+      {sesion && (
+        <CambiarContrasenaDialog
+          open={!!sesion.debe_cambiar_contrasena}
+          forced
+        />
+      )}
+      <CambiarContrasenaDialog
+        open={cambioContrasenaAbierto}
+        onClose={() => setCambioContrasenaAbierto(false)}
+      />
     </Box>
   );
 };

@@ -10,4 +10,7 @@ export const usuariosTiService = {
   deleteUsuarioTi: async (id) => {
     return await api.delete(`usuarios-ti/${id}`);
   },
+  cambiarContrasena: async (id, data) => {
+    return await api.patch(`usuarios-ti/${id}/contrasena`, data);
+  },
 };
