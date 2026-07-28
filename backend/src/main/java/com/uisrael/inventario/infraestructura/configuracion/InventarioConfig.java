@@ -12,6 +12,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.module.SimpleModule;
 
@@ -42,7 +43,7 @@ import com.uisrael.inventario.dominio.repositorios.ICargoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IEmpleadoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IOficinaRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IUsuarioTiRepositorio;
-import com.uisrael.inventario.infraestructura.correo.MailtrapEmailSenderImpl;
+import com.uisrael.inventario.infraestructura.correo.GraphEmailSenderImpl;
 import com.uisrael.inventario.infraestructura.documentos.ActaPdfGeneradorImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.ActaEntregaRecepcionRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.ActivoDetalleRepositorioImpl;
@@ -168,12 +169,13 @@ public class InventarioConfig {
 	}
 
 	@Bean
-	IEmailSender emailSender(@Value("${app.mail.mailtrap-token}") String apiToken,
-			@Value("${app.mail.from-email}") String fromEmail, @Value("${app.mail.from-name}") String fromName,
-			@Value("${app.mail.sandbox}") boolean sandboxHabilitado,
-			@Value("${app.mail.inbox-id}") Long inboxId,
+	IEmailSender emailSender(ObjectMapper objectMapper,
+			@Value("${app.mail.ms-graph-tenant-id}") String tenantId,
+			@Value("${app.mail.ms-graph-client-id}") String clientId,
+			@Value("${app.mail.ms-graph-client-secret}") String clientSecret,
+			@Value("${app.mail.ms-graph-sender-email}") String senderEmail,
 			@Value("${app.mail.plantillas-dir:plantillas/correos}") String directorioPlantillas) {
-		return new MailtrapEmailSenderImpl(apiToken, fromEmail, fromName, sandboxHabilitado, inboxId,
+		return new GraphEmailSenderImpl(objectMapper, tenantId, clientId, clientSecret, senderEmail,
 				directorioPlantillas);
 	}
 

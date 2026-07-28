@@ -65,6 +65,7 @@ public class DatosInicialesSeeder implements CommandLineRunner {
 		}
 		OficinaEntity oficina = new OficinaEntity();
 		oficina.setNombre(NOMBRE_OFICINA_MATRIZ);
+		oficina.setDireccion("Antonio de Ulloa y Pascual de andagoya");
 		oficina.setActivo(true);
 		return oficinaRepositorio.save(oficina);
 	}
