@@ -8,4 +8,5 @@ import com.uisrael.inventario.infraestructura.persistencia.jpa.UsuarioTiEntity;
 
 public interface IUsuarioTiJpaRepositorio extends JpaRepository<UsuarioTiEntity, Integer> {
 	Optional<UsuarioTiEntity> findByCorreo(String correo);
+	Optional<UsuarioTiEntity> findByTokenRecuperacion(String tokenRecuperacion);
 }

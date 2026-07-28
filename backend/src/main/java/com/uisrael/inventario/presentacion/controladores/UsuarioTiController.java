@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IUsuarioTiUseCase;
 import com.uisrael.inventario.dominio.entidades.UsuarioTi;
+import com.uisrael.inventario.presentacion.dto.request.CambiarContrasenaRequestDto;
 import com.uisrael.inventario.presentacion.dto.request.UsuarioTiRequestDto;
 import com.uisrael.inventario.presentacion.dto.response.UsuarioTiResponseDto;
 import com.uisrael.inventario.presentacion.mapeadores.IUsuarioTiDtoMapper;
@@ -61,6 +63,14 @@ public class UsuarioTiController {
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> eliminar(@PathVariable("id") int id) {
 		usuarioTiUseCase.eliminar(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	@PatchMapping("/{id}/contrasena")
+	public ResponseEntity<Void> cambiarContrasena(@PathVariable("id") int id,
+			@Valid @RequestBody CambiarContrasenaRequestDto requestDto) {
+		usuarioTiUseCase.cambiarContrasena(id, requestDto.getContrasenaActual(), requestDto.getContrasenaNueva(),
+				requestDto.getConfirmarContrasenaNueva());
 		return ResponseEntity.noContent().build();
 	}
 

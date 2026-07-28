@@ -31,6 +31,7 @@ public class UsuarioTiUseCaseImpl implements IUsuarioTiUseCase {
 			Empleado empleado = empleadoRepositorio.buscarPorId(usuarioTi.getIdEmpleado())
 					.orElseThrow(() -> new RuntimeException("Empleado no encontrado"));
 			usuarioTi.setContrasena(passwordEncoder.encode(empleado.getCedula()));
+			usuarioTi.setDebeCambiarContrasena(true);
 			usuarioTi.setFechaCreacion(ahora);
 			usuarioTi.setFechaActualizacion(ahora);
 		} else {
@@ -39,10 +40,38 @@ public class UsuarioTiUseCaseImpl implements IUsuarioTiUseCase {
 			UsuarioTi existente = repositorio.buscarPorId(usuarioTi.getIdUsuarioTi())
 					.orElseThrow(() -> new RuntimeException("UsuarioTi no encontrado"));
 			usuarioTi.setContrasena(existente.getContrasena());
+			usuarioTi.setDebeCambiarContrasena(existente.isDebeCambiarContrasena());
+			usuarioTi.setTokenRecuperacion(existente.getTokenRecuperacion());
+			usuarioTi.setTokenRecuperacionExpiracion(existente.getTokenRecuperacionExpiracion());
 			usuarioTi.setFechaCreacion(existente.getFechaCreacion());
 			usuarioTi.setFechaActualizacion(ahora);
 		}
 		return repositorio.guardar(usuarioTi);
+	}
+
+	@Override
+	public void cambiarContrasena(int idUsuarioTi, String contrasenaActual, String contrasenaNueva,
+			String confirmarContrasenaNueva) {
+		if (!contrasenaNueva.equals(confirmarContrasenaNueva)) {
+			throw new RuntimeException("La confirmacion no coincide con la nueva contrasena");
+		}
+		UsuarioTi existente = repositorio.buscarPorId(idUsuarioTi)
+				.orElseThrow(() -> new RuntimeException("UsuarioTi no encontrado"));
+		if (!passwordEncoder.matches(contrasenaActual, existente.getContrasena())) {
+			throw new RuntimeException("La contrasena actual no es correcta");
+		}
+		if (contrasenaNueva.length() < 8) {
+			throw new RuntimeException("La nueva contrasena debe tener al menos 8 caracteres");
+		}
+		if (contrasenaNueva.equals(contrasenaActual)) {
+			throw new RuntimeException("La nueva contrasena debe ser diferente a la actual");
+		}
+		existente.setContrasena(passwordEncoder.encode(contrasenaNueva));
+		existente.setDebeCambiarContrasena(false);
+		existente.setTokenRecuperacion(null);
+		existente.setTokenRecuperacionExpiracion(null);
+		existente.setFechaActualizacion(LocalDateTime.now());
+		repositorio.guardar(existente);
 	}
 
 	@Override

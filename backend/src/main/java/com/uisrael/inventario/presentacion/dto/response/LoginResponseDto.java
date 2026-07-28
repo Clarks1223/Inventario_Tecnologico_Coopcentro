@@ -11,5 +11,6 @@ public class LoginResponseDto {
 	private String apellido;
 	private String correo;
 	private String rol;
+	private boolean debeCambiarContrasena;
 
 }

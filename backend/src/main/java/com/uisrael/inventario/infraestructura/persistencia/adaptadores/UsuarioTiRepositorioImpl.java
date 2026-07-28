@@ -37,6 +37,11 @@ public class UsuarioTiRepositorioImpl implements IUsuarioTiRepositorio {
 	}
 
 	@Override
+	public Optional<UsuarioTi> buscarPorTokenRecuperacion(String token) {
+		return jpaRepositorio.findByTokenRecuperacion(token).map(entityMapper::toDomain);
+	}
+
+	@Override
 	public List<UsuarioTi> listarTodos() {
 		return jpaRepositorio.findAll().stream().map(entityMapper::toDomain).toList();
 	}

@@ -9,4 +9,6 @@ public interface IUsuarioTiUseCase {
 	UsuarioTi buscarPorId(int idUsuarioTi);
 	List<UsuarioTi> listarTodos();
 	void eliminar(int idUsuarioTi);
+	void cambiarContrasena(int idUsuarioTi, String contrasenaActual, String contrasenaNueva,
+			String confirmarContrasenaNueva);
 }

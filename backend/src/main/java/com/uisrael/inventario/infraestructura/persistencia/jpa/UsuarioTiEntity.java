@@ -32,6 +32,15 @@ public class UsuarioTiEntity {
 	@Column(name = "contrasena", length = 255, nullable = false)
 	private String contrasena;
 
+	@Column(name = "debe_cambiar_contrasena", nullable = false, columnDefinition = "boolean not null default true")
+	private boolean debeCambiarContrasena;
+
+	@Column(name = "token_recuperacion", length = 64)
+	private String tokenRecuperacion;
+
+	@Column(name = "token_recuperacion_expiracion")
+	private LocalDateTime tokenRecuperacionExpiracion;
+
 	@Column(name = "fecha_creacion", nullable = false)
 	private LocalDateTime fechaCreacion;
 

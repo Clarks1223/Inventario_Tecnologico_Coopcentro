@@ -15,6 +15,9 @@ public class UsuarioTi {
 	private int idEmpleado;
 	private String correo;
 	private String contrasena;
+	private boolean debeCambiarContrasena;
+	private String tokenRecuperacion;
+	private LocalDateTime tokenRecuperacionExpiracion;
 	private LocalDateTime fechaCreacion;
 	private LocalDateTime fechaActualizacion;
 

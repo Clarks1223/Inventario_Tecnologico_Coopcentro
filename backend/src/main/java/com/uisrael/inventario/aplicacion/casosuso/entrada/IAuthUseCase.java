@@ -4,4 +4,6 @@ import com.uisrael.inventario.dominio.entidades.SesionUsuario;
 
 public interface IAuthUseCase {
 	SesionUsuario iniciarSesion(String correo, String contrasena);
+	void solicitarRecuperacion(String correo);
+	void restablecerContrasena(String token, String contrasenaNueva, String confirmarContrasenaNueva);
 }

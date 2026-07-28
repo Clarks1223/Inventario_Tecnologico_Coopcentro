@@ -9,6 +9,7 @@ public interface IUsuarioTiRepositorio {
 	UsuarioTi guardar(UsuarioTi nuevoUsuarioTi);
 	Optional<UsuarioTi> buscarPorId(int idUsuarioTi);
 	Optional<UsuarioTi> buscarPorCorreo(String correo);
+	Optional<UsuarioTi> buscarPorTokenRecuperacion(String token);
 	List<UsuarioTi> listarTodos();
 	void eliminar(int idUsuarioTi);
 }

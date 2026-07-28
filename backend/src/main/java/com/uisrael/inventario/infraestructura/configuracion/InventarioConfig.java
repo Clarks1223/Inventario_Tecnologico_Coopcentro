@@ -33,6 +33,7 @@ import com.uisrael.inventario.aplicacion.casosuso.impl.CargoUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.EmpleadoUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.OficinaUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.UsuarioTiUseCaseImpl;
+import com.uisrael.inventario.dominio.correo.IEmailSender;
 import com.uisrael.inventario.dominio.documentos.IActaPdfGenerador;
 import com.uisrael.inventario.dominio.repositorios.IActaEntregaRecepcionRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IActivoDetalleRepositorio;
@@ -41,6 +42,7 @@ import com.uisrael.inventario.dominio.repositorios.ICargoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IEmpleadoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IOficinaRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IUsuarioTiRepositorio;
+import com.uisrael.inventario.infraestructura.correo.MailtrapEmailSenderImpl;
 import com.uisrael.inventario.infraestructura.documentos.ActaPdfGeneradorImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.ActaEntregaRecepcionRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.ActivoDetalleRepositorioImpl;
@@ -166,8 +168,20 @@ public class InventarioConfig {
 	}
 
 	@Bean
-	IAuthUseCase authUseCase(IUsuarioTiRepositorio usuarioTiRepositorio, IEmpleadoRepositorio empleadoRepositorio, PasswordEncoder passwordEncoder) {
-		return new AuthUseCaseImpl(usuarioTiRepositorio, empleadoRepositorio, passwordEncoder);
+	IEmailSender emailSender(@Value("${app.mail.mailtrap-token}") String apiToken,
+			@Value("${app.mail.from-email}") String fromEmail, @Value("${app.mail.from-name}") String fromName,
+			@Value("${app.mail.sandbox}") boolean sandboxHabilitado,
+			@Value("${app.mail.inbox-id}") Long inboxId,
+			@Value("${app.mail.plantillas-dir:plantillas/correos}") String directorioPlantillas) {
+		return new MailtrapEmailSenderImpl(apiToken, fromEmail, fromName, sandboxHabilitado, inboxId,
+				directorioPlantillas);
+	}
+
+	@Bean
+	IAuthUseCase authUseCase(IUsuarioTiRepositorio usuarioTiRepositorio, IEmpleadoRepositorio empleadoRepositorio,
+			PasswordEncoder passwordEncoder, IEmailSender emailSender,
+			@Value("${app.frontend.base-url}") String frontendBaseUrl) {
+		return new AuthUseCaseImpl(usuarioTiRepositorio, empleadoRepositorio, passwordEncoder, emailSender, frontendBaseUrl);
 	}
 
 	@Bean

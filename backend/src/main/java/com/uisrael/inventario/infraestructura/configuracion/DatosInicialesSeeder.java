@@ -107,6 +107,7 @@ public class DatosInicialesSeeder implements CommandLineRunner {
 		usuarioTi.setEmpleado(empleado);
 		usuarioTi.setCorreo(correoAdmin);
 		usuarioTi.setContrasena(passwordEncoder.encode(empleado.getCedula()));
+		usuarioTi.setDebeCambiarContrasena(true);
 		usuarioTi.setFechaCreacion(ahora);
 		usuarioTi.setFechaActualizacion(ahora);
 		usuarioTiRepositorio.save(usuarioTi);
