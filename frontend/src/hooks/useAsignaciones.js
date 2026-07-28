@@ -13,13 +13,12 @@ export const useAsignaciones = () => {
   const [activos, setActivos] = useState([]);
   const [usuariosTi, setUsuariosTi] = useState([]);
   const [oficinas, setOficinas] = useState([]);
+  const [cargos, setCargos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(10);
-  const [showHistorial, setShowHistorial] = useState(false);
   const [open, setOpen] = useState(false);
-  const [empleadoFiltro, setEmpleadoFiltro] = useState(null);
+  const [busquedaEmpleado, setBusquedaEmpleado] = useState('');
   const [oficinaFiltro, setOficinaFiltro] = useState(null);
+  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
 
   const { sesion } = useSession();
   const showSnackbar = useSnackbar();
@@ -28,18 +27,20 @@ export const useAsignaciones = () => {
   const fetchAll = useCallback(async (signal) => {
     setIsLoading(true);
     try {
-      const [actasRes, empleadosRes, activosRes, usuariosTiRes, oficinasRes] = await Promise.all([
+      const [actasRes, empleadosRes, activosRes, usuariosTiRes, oficinasRes, cargosRes] = await Promise.all([
         asignacionesService.getAsignaciones({ signal }),
         empleadosService.getEmpleados({ signal }),
         activosService.getActivos({ signal }),
         asignacionesService.getUsuariosTi(),
         oficinasService.getOficinas(),
+        empleadosService.getCargos(),
       ]);
       setAllAsignaciones(actasRes.data || []);
       setEmpleados(empleadosRes.data || []);
       setActivos(activosRes.data || []);
       setUsuariosTi(usuariosTiRes.data || []);
       setOficinas(oficinasRes.data || []);
+      setCargos(cargosRes.data || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -69,41 +70,67 @@ export const useAsignaciones = () => {
     [usuariosTi, empleadoNombre]
   );
 
-  const activoLabel = useCallback(
-    (id) => {
-      const activo = activos.find((a) => a.id_activo === id);
-      return activo ? `${activo.codigo_inventario} · ${activo.tipo_activo}` : '';
-    },
+  const activoDe = useCallback(
+    (id) => activos.find((a) => a.id_activo === id),
     [activos]
   );
+
+  const oficinaNombre = useCallback(
+    (id) => oficinas.find((o) => o.id_oficina === id)?.nombre || '',
+    [oficinas]
+  );
+
+  const cargoNombre = useCallback(
+    (id) => cargos.find((c) => c.id_cargo === id)?.nombre || '',
+    [cargos]
+  );
+
+  const conteoActivasPorEmpleado = useMemo(() => {
+    const conteo = {};
+    allAsignaciones.forEach((a) => {
+      if (a.estado_asignacion === 'activa') {
+        conteo[a.id_empleado] = (conteo[a.id_empleado] || 0) + 1;
+      }
+    });
+    return conteo;
+  }, [allAsignaciones]);
+
+  const empleadosFiltrados = useMemo(() => {
+    const texto = busquedaEmpleado.trim().toLowerCase();
+    return empleados
+      .filter((e) => e.activo)
+      .filter((e) => !oficinaFiltro || e.id_oficina === oficinaFiltro)
+      .filter(
+        (e) =>
+          !texto ||
+          `${e.nombre} ${e.apellido}`.toLowerCase().includes(texto) ||
+          e.cedula?.includes(texto) ||
+          e.correo?.toLowerCase().includes(texto)
+      )
+      .sort((a, b) => `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`));
+  }, [empleados, oficinaFiltro, busquedaEmpleado]);
+
+  const empleadoActual = useMemo(
+    () => empleados.find((e) => e.id_empleado === empleadoSeleccionado) || null,
+    [empleados, empleadoSeleccionado]
+  );
+
+  const asignacionesDelEmpleado = useMemo(() => {
+    if (!empleadoSeleccionado) return [];
+    return allAsignaciones
+      .filter((a) => a.id_empleado === empleadoSeleccionado && a.estado_asignacion === 'activa')
+      .sort((a, b) => new Date(b.fecha_asignacion) - new Date(a.fecha_asignacion))
+      .map((a) => ({
+        ...a,
+        serial: activoDe(a.id_activo)?.serial || '',
+        tipo_activo: activoDe(a.id_activo)?.tipo_activo || '',
+        nombre_tecnico: tecnicoNombre(a.id_usuario_ti),
+      }));
+  }, [allAsignaciones, empleadoSeleccionado, activoDe, tecnicoNombre]);
 
   const activosDisponibles = useMemo(
     () => activos.filter((a) => a.estado === 'NO_ASIGNADO'),
     [activos]
-  );
-
-  const empleadoOficina = useCallback(
-    (idEmpleado) => empleados.find((e) => e.id_empleado === idEmpleado)?.id_oficina,
-    [empleados]
-  );
-
-  const filteredAsignaciones = useMemo(() => {
-    return allAsignaciones
-      .filter((a) => (showHistorial ? true : a.estado_asignacion === 'activa'))
-      .filter((a) => !empleadoFiltro || a.id_empleado === empleadoFiltro)
-      .filter((a) => !oficinaFiltro || empleadoOficina(a.id_empleado) === oficinaFiltro)
-      .sort((a, b) => new Date(b.fecha_asignacion) - new Date(a.fecha_asignacion));
-  }, [allAsignaciones, showHistorial, empleadoFiltro, oficinaFiltro, empleadoOficina]);
-
-  const asignaciones = useMemo(
-    () => filteredAsignaciones.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-      .map((a) => ({
-        ...a,
-        nombre_empleado: empleadoNombre(a.id_empleado),
-        nombre_tecnico: tecnicoNombre(a.id_usuario_ti),
-        activo_label: activoLabel(a.id_activo),
-      })),
-    [filteredAsignaciones, page, rowsPerPage, empleadoNombre, tecnicoNombre, activoLabel]
   );
 
   const handlePrint = useCallback(async (idActa) => {
@@ -141,35 +168,37 @@ export const useAsignaciones = () => {
     }
   }, [fetchAll, showSnackbar]);
 
-  const handleAssign = useCallback(async ({ id_activo, id_empleado, motivo }) => {
+  const handleAssign = useCallback(async ({ id_activo, motivo }) => {
     try {
       await asignacionesService.assignActivo({
         id_activo,
-        id_empleado,
+        id_empleado: empleadoSeleccionado,
         id_usuario_ti: sesion.id_usuario_ti,
         motivo,
       });
       showSnackbar('Activo asignado correctamente', 'success');
       setOpen(false);
-      setEmpleadoFiltro(id_empleado);
       fetchAll();
     } catch (error) {
       showSnackbar(error.response?.data?.message || 'Error al asignar el activo', 'error');
     }
-  }, [sesion, fetchAll, showSnackbar]);
+  }, [empleadoSeleccionado, sesion, fetchAll, showSnackbar]);
 
-  const handlePrintAllForEmpleado = useCallback((idEmpleado) => {
-    const activasDelEmpleado = allAsignaciones.filter(
-      (a) => a.id_empleado === idEmpleado && a.estado_asignacion === 'activa'
-    );
-    if (activasDelEmpleado.length === 0) {
-      showSnackbar('Este empleado no tiene activos asignados actualmente', 'warning');
-      return;
+  const handlePrintAllForEmpleado = useCallback(async (idEmpleado) => {
+    try {
+      const response = await asignacionesService.getActasImprimibles(idEmpleado);
+      const idsActas = response.data || [];
+      if (idsActas.length === 0) {
+        showSnackbar('Este empleado no tiene activos asignados actualmente', 'warning');
+        return;
+      }
+      idsActas.forEach((idActa, indice) => {
+        setTimeout(() => handlePrint(idActa), indice * 500);
+      });
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || 'Error al obtener las actas del empleado', 'error');
     }
-    activasDelEmpleado.forEach((acta, indice) => {
-      setTimeout(() => handlePrint(acta.id_acta), indice * 500);
-    });
-  }, [allAsignaciones, showSnackbar, handlePrint]);
+  }, [showSnackbar, handlePrint]);
 
   const initiateReturn = useCallback((idActa) => {
     openConfirm('devolver', idActa, '¿Deseas registrar la devolución de este activo?');
@@ -187,23 +216,23 @@ export const useAsignaciones = () => {
   }, [confirmDialog, closeConfirm, handleReturn, handleReturnAll]);
 
   return {
-    asignaciones,
     isLoading,
-    page,
-    setPage,
-    count: filteredAsignaciones.length,
-    rowsPerPage,
-    empleados,
-    activosDisponibles,
     oficinas,
-    showHistorial,
-    setShowHistorial,
-    open,
-    setOpen,
-    empleadoFiltro,
-    setEmpleadoFiltro,
+    busquedaEmpleado,
+    setBusquedaEmpleado,
     oficinaFiltro,
     setOficinaFiltro,
+    empleadosFiltrados,
+    empleadoSeleccionado,
+    setEmpleadoSeleccionado,
+    empleadoActual,
+    asignacionesDelEmpleado,
+    conteoActivasPorEmpleado,
+    activosDisponibles,
+    oficinaNombre,
+    cargoNombre,
+    open,
+    setOpen,
     confirmDialog,
     handleAssign,
     initiateReturn,

@@ -151,11 +151,9 @@ export const useEmpleados = () => {
       fetchEmpleados();
       fetchUsuariosTi();
       setOpen(false);
+      showSnackbar(isEdit ? 'Empleado actualizado correctamente' : 'Empleado registrado exitosamente', 'success');
     } catch (error) {
-      showSnackbar(
-        'Error al guardar: ' + (error.response?.data?.message || error.message),
-        'error'
-      );
+      showSnackbar(error.response?.data?.message || 'Error al guardar el empleado', 'error');
     }
   }, [isEdit, currentEmpleado, usuarioTiDeEmpleado, fetchEmpleados, fetchUsuariosTi, showSnackbar]);
 
@@ -164,12 +162,10 @@ export const useEmpleados = () => {
       const empleado = allEmpleados.find((e) => e.id_empleado === id);
       if (!empleado) return;
       await empleadosService.updateEmpleado(id, { ...empleado, activo });
+      showSnackbar(activo ? 'Empleado reactivado correctamente' : 'Empleado desactivado correctamente', 'success');
       fetchEmpleados();
     } catch (error) {
-      showSnackbar(
-        `Error al ${activo ? 'reactivar' : 'desactivar'}: ` + (error.response?.data?.message || error.message),
-        'error'
-      );
+      showSnackbar(error.response?.data?.message || 'Error al actualizar el empleado', 'error');
     }
   }, [allEmpleados, fetchEmpleados, showSnackbar]);
 

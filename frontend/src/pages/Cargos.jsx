@@ -118,7 +118,7 @@ const Cargos = () => {
             fullWidth
             value={currentCargo.nombre}
             onChange={(e) =>
-              setCurrentCargo({ ...currentCargo, nombre: e.target.value })
+              setCurrentCargo({ ...currentCargo, nombre: e.target.value.toUpperCase() })
             }
           />
         </DialogContent>

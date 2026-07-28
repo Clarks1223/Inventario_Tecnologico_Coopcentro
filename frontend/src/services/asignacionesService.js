@@ -19,4 +19,7 @@ export const asignacionesService = {
   printActa: async (idActa) => {
     return await api.get(`actas/${idActa}/imprimir`, { responseType: 'blob' });
   },
+  getActasImprimibles: async (idEmpleado) => {
+    return await api.get(`actas/imprimibles-empleado/${idEmpleado}`);
+  },
 };

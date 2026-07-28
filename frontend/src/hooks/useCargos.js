@@ -47,14 +47,15 @@ export const useCargos = () => {
     try {
       if (isEdit) {
         await cargosService.updateCargo(currentCargo.id_cargo, currentCargo);
+        showSnackbar('Cargo actualizado correctamente', 'success');
       } else {
         await cargosService.createCargo({ ...currentCargo, activo: true });
+        showSnackbar('Cargo registrado exitosamente', 'success');
       }
       fetchCargos();
       setOpen(false);
     } catch (error) {
-      const msg = error.response?.data?.nombre || error.message;
-      showSnackbar('Error al guardar: ' + msg, 'error');
+      showSnackbar(error.response?.data?.message || 'Error al guardar el cargo', 'error');
     }
   }, [isEdit, currentCargo, fetchCargos, showSnackbar]);
 
@@ -63,12 +64,10 @@ export const useCargos = () => {
       const cargo = allCargos.find((c) => c.id_cargo === id);
       if (!cargo) return;
       await cargosService.updateCargo(id, { ...cargo, activo });
+      showSnackbar(activo ? 'Cargo reactivado correctamente' : 'Cargo desactivado correctamente', 'success');
       fetchCargos();
     } catch (error) {
-      showSnackbar(
-        `Error al ${activo ? 'reactivar' : 'desactivar'} cargo: ` + (error.response?.data?.nombre || error.message),
-        'error'
-      );
+      showSnackbar(error.response?.data?.message || 'Error al actualizar el cargo', 'error');
     }
   }, [allCargos, fetchCargos, showSnackbar]);
 

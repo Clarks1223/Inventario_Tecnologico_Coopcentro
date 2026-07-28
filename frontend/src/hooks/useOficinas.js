@@ -47,14 +47,15 @@ export const useOficinas = () => {
     try {
       if (isEdit) {
         await oficinasService.updateOficina(currentOficina.id_oficina, currentOficina);
+        showSnackbar('Oficina actualizada correctamente', 'success');
       } else {
         await oficinasService.createOficina({ ...currentOficina, activo: true });
+        showSnackbar('Oficina registrada exitosamente', 'success');
       }
       fetchOficinas();
       setOpen(false);
     } catch (error) {
-      const msg = error.response?.data?.nombre || error.message;
-      showSnackbar('Error al guardar: ' + msg, 'error');
+      showSnackbar(error.response?.data?.message || 'Error al guardar la oficina', 'error');
     }
   }, [isEdit, currentOficina, fetchOficinas, showSnackbar]);
 
@@ -63,12 +64,10 @@ export const useOficinas = () => {
       const oficina = allOficinas.find((o) => o.id_oficina === id);
       if (!oficina) return;
       await oficinasService.updateOficina(id, { ...oficina, activo });
+      showSnackbar(activo ? 'Oficina reactivada correctamente' : 'Oficina desactivada correctamente', 'success');
       fetchOficinas();
     } catch (error) {
-      showSnackbar(
-        `Error al ${activo ? 'reactivar' : 'desactivar'}: ` + (error.response?.data?.nombre || error.message),
-        'error'
-      );
+      showSnackbar(error.response?.data?.message || 'Error al actualizar la oficina', 'error');
     }
   }, [allOficinas, fetchOficinas, showSnackbar]);
 

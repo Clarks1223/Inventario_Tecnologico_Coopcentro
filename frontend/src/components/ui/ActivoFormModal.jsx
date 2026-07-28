@@ -128,6 +128,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                   setBaseData({ ...baseData, codigo_inventario: e.target.value })
                 }
                 disabled={isEditing}
+                helperText="Sugerencia: OFICINA-AREA-TIPO-NUMERACIÓN (ej. MAT-SIS-MOUSE-001). Debe ser único."
               />
             </Grid>
 

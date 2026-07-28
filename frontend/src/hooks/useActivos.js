@@ -160,7 +160,7 @@ export const useActivos = () => {
       fetchActivos();
       showSnackbar('Activo dado de baja correctamente.', 'success');
     } catch (error) {
-      const msg = error.response?.data?.error || 'Error al dar de baja';
+      const msg = error.response?.data?.message || 'Error al dar de baja';
       showSnackbar(msg, 'error');
     }
   }, [allActivos, fetchActivos, showSnackbar]);
@@ -173,7 +173,7 @@ export const useActivos = () => {
       fetchActivos();
       showSnackbar('Activo reportado como robado/perdido.', 'success');
     } catch (error) {
-      const msg = error.response?.data?.error || 'Error al reportar el activo';
+      const msg = error.response?.data?.message || 'Error al reportar el activo';
       showSnackbar(msg, 'error');
     }
   }, [allActivos, fetchActivos, showSnackbar]);

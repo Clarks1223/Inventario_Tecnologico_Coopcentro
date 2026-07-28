@@ -21,6 +21,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import DevicesIcon from '@mui/icons-material/Devices';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import HistoryIcon from '@mui/icons-material/History';
 import WorkIcon from '@mui/icons-material/Work';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -36,6 +37,7 @@ const menuItems = [
   { text: 'Empleados', icon: <PeopleIcon />, path: '/empleados' },
   { text: 'Activos', icon: <DevicesIcon />, path: '/activos' },
   { text: 'Asignaciones', icon: <AssignmentIcon />, path: '/asignaciones' },
+  { text: 'Historial de Asignaciones', icon: <HistoryIcon />, path: '/historial-asignaciones' },
 ];
 
 const Layout = () => {
