@@ -4,6 +4,7 @@ import { empleadosService } from '../services/empleadosService';
 import { activosService } from '../services/activosService';
 import { oficinasService } from '../services/oficinasService';
 import { useSnackbar } from './useSnackbar';
+import axios from 'axios';
 
 export const useHistorialAsignaciones = () => {
   const [allAsignaciones, setAllAsignaciones] = useState([]);
@@ -37,7 +38,7 @@ export const useHistorialAsignaciones = () => {
       setUsuariosTi(usuariosTiRes.data || []);
       setOficinas(oficinasRes.data || []);
     } catch (error) {
-      console.error(error);
+      if (!axios.isCancel(error)) console.error(error);
     } finally {
       setIsLoading(false);
     }

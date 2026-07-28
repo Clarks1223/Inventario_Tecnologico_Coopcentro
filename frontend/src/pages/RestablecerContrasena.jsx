@@ -58,9 +58,10 @@ const RestablecerContrasena = () => {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default',
+        px: 2,
       }}
     >
-      <Paper sx={{ p: 4, width: 360 }} component="form" onSubmit={handleSubmit}>
+      <Paper sx={{ p: 4, width: '100%', maxWidth: 360 }} component="form" onSubmit={handleSubmit}>
         <Typography variant="h5" gutterBottom textAlign="center">
           Restablecer contraseña
         </Typography>

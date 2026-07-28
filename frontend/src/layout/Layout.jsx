@@ -104,13 +104,13 @@ const Layout = () => {
         position="fixed"
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
       >
-        <Toolbar>
+        <Toolbar sx={{ gap: 0.5 }}>
           <IconButton
             color="inherit"
             aria-label="Abrir menú de navegación"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2, display: { lg: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
@@ -124,17 +124,33 @@ const Layout = () => {
               </Typography>
               <Button
                 color="inherit"
+                aria-label="Cambiar contraseña"
                 startIcon={<LockResetIcon />}
                 onClick={() => setCambioContrasenaAbierto(true)}
+                sx={{
+                  minWidth: 0,
+                  px: { xs: 1, sm: 2 },
+                  '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
+                }}
               >
-                Cambiar contraseña
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Cambiar contraseña
+                </Box>
               </Button>
               <Button
                 color="inherit"
+                aria-label="Cerrar sesión"
                 startIcon={<LogoutIcon />}
                 onClick={handleLogout}
+                sx={{
+                  minWidth: 0,
+                  px: { xs: 1, sm: 2 },
+                  '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
+                }}
               >
-                Cerrar sesión
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Cerrar sesión
+                </Box>
               </Button>
             </>
           )}
@@ -142,7 +158,7 @@ const Layout = () => {
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ width: { lg: drawerWidth }, flexShrink: { lg: 0 } }}
         aria-label="Navegación principal"
       >
         <Drawer
@@ -151,7 +167,7 @@ const Layout = () => {
           onClose={handleDrawerToggle}
           ModalProps={{ keepMounted: true }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
+            display: { xs: 'block', lg: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
@@ -163,7 +179,7 @@ const Layout = () => {
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: 'none', sm: 'block' },
+            display: { xs: 'none', lg: 'block' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
@@ -179,8 +195,9 @@ const Layout = () => {
         id="main-content"
         sx={{
           flexGrow: 1,
-          p: { xs: 1, sm: 3 },
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          minWidth: 0,
+          p: { xs: 1.5, sm: 2, md: 3 },
+          width: { lg: `calc(100% - ${drawerWidth}px)` },
         }}
       >
         <Toolbar />

@@ -8,7 +8,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
       <Grid size={{ xs: 12 }}>
         <Typography variant="h6">Detalles de Cómputo</Typography>
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Procesador"
           fullWidth
@@ -18,7 +18,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="RAM (GB)"
           type="number"
@@ -29,7 +29,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Tipo de Almacenamiento"
           fullWidth
@@ -39,7 +39,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Almacenamiento (GB)"
           type="number"
@@ -50,7 +50,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="IP"
           fullWidth
@@ -60,7 +60,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Dominio"
           fullWidth

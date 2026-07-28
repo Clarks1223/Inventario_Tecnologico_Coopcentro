@@ -8,7 +8,7 @@ const ImpresoraFields = memo(function ImpresoraFields({ detailData, setDetailDat
       <Grid size={{ xs: 12 }}>
         <Typography variant="h6">Detalles Impresora Térmica</Typography>
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Tipo de Conexión"
           fullWidth
@@ -18,7 +18,7 @@ const ImpresoraFields = memo(function ImpresoraFields({ detailData, setDetailDat
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Modelo de Cabezal"
           fullWidth
@@ -28,7 +28,7 @@ const ImpresoraFields = memo(function ImpresoraFields({ detailData, setDetailDat
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Estado de Batería"
           fullWidth

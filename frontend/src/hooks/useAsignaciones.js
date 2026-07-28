@@ -6,6 +6,7 @@ import { oficinasService } from '../services/oficinasService';
 import { useSession } from './useSession';
 import { useSnackbar } from './useSnackbar';
 import { useConfirmDialog } from './useConfirmDialog';
+import axios from 'axios';
 
 export const useAsignaciones = () => {
   const [allAsignaciones, setAllAsignaciones] = useState([]);
@@ -42,7 +43,7 @@ export const useAsignaciones = () => {
       setOficinas(oficinasRes.data || []);
       setCargos(cargosRes.data || []);
     } catch (error) {
-      console.error(error);
+      if (!axios.isCancel(error)) console.error(error);
     } finally {
       setIsLoading(false);
     }

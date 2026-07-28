@@ -88,7 +88,7 @@ const Activos = () => {
       </PageHeader>
 
       <TableContainer component={Paper}>
-        <Table size="small" sx={{ minWidth: 1400, tableLayout: 'fixed' }}>
+        <Table size="small" sx={{ minWidth: 1150, tableLayout: 'fixed' }}>
           <TableHead>
             <TableRow>
               <TableCell sx={{ width: '10%' }}>
@@ -217,7 +217,18 @@ const Activos = () => {
                   }
                 />
               </TableCell>
-              <TableCell sx={{ width: 120 }}>Acciones</TableCell>
+              <TableCell
+                sx={{
+                  width: 120,
+                  position: 'sticky',
+                  right: 0,
+                  bgcolor: 'background.paper',
+                  boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                  zIndex: 2,
+                }}
+              >
+                Acciones
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -318,7 +329,15 @@ const Activos = () => {
                       <span>{row.detalle?.dominio || '-'}</span>
                     </Tooltip>
                   </TableCell>
-                  <TableCell>
+                  <TableCell
+                    sx={{
+                      position: 'sticky',
+                      right: 0,
+                      bgcolor: 'background.paper',
+                      boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                      zIndex: 1,
+                    }}
+                  >
                     <IconButton
                       aria-label="Editar activo"
                       size="small"

@@ -25,6 +25,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
 } from '@mui/material';
@@ -33,6 +34,7 @@ import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
 import PrintIcon from '@mui/icons-material/Print';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import { useAsignaciones } from '../hooks/useAsignaciones';
+import { useDialogFullScreen } from '../hooks/useDialogFullScreen';
 import { useSession } from '../hooks/useSession';
 import PageHeader from '../components/ui/PageHeader';
 import { TIPO_ACTIVO_OPTIONS } from '../constants/activosConstants';
@@ -76,6 +78,7 @@ const Asignaciones = () => {
   const { sesion } = useSession();
   const [form, setForm] = useState(emptyForm);
   const [tipoActivoDialogo, setTipoActivoDialogo] = useState('');
+  const dialogoPantallaCompleta = useDialogFullScreen();
 
   const empleadosVisibles = empleadosFiltrados.slice(0, MAX_EMPLEADOS_VISIBLES);
   const empleadosOcultos = empleadosFiltrados.length - empleadosVisibles.length;
@@ -219,48 +222,69 @@ const Asignaciones = () => {
                   Este empleado no tiene activos asignados actualmente.
                 </Typography>
               ) : (
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Número de Serie</TableCell>
-                      <TableCell>Tipo</TableCell>
-                      <TableCell>Fecha Asignación</TableCell>
-                      <TableCell>Procesado por</TableCell>
-                      <TableCell align="right">Acciones</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {asignacionesDelEmpleado.map((acta) => (
-                      <TableRow key={acta.id_acta}>
-                        <TableCell>{acta.serial}</TableCell>
-                        <TableCell>{acta.tipo_activo}</TableCell>
-                        <TableCell>
-                          {acta.fecha_asignacion
-                            ? new Date(acta.fecha_asignacion).toLocaleString()
-                            : '-'}
-                        </TableCell>
-                        <TableCell>{acta.nombre_tecnico}</TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            aria-label="Imprimir acta de entrega"
-                            title="Imprimir acta de entrega"
-                            onClick={() => handlePrint(acta.id_acta)}
-                          >
-                            <PrintIcon />
-                          </IconButton>
-                          <IconButton
-                            aria-label="Registrar devolución"
-                            title="Registrar devolución"
-                            color="error"
-                            onClick={() => initiateReturn(acta.id_acta)}
-                          >
-                            <AssignmentReturnIcon />
-                          </IconButton>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Número de Serie</TableCell>
+                        <TableCell>Tipo</TableCell>
+                        <TableCell>Fecha Asignación</TableCell>
+                        <TableCell>Procesado por</TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{
+                            position: 'sticky',
+                            right: 0,
+                            bgcolor: 'background.paper',
+                            boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                          }}
+                        >
+                          Acciones
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {asignacionesDelEmpleado.map((acta) => (
+                        <TableRow key={acta.id_acta}>
+                          <TableCell>{acta.serial}</TableCell>
+                          <TableCell>{acta.tipo_activo}</TableCell>
+                          <TableCell>
+                            {acta.fecha_asignacion
+                              ? new Date(acta.fecha_asignacion).toLocaleString()
+                              : '-'}
+                          </TableCell>
+                          <TableCell>{acta.nombre_tecnico}</TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{
+                              position: 'sticky',
+                              right: 0,
+                              bgcolor: 'background.paper',
+                              boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <IconButton
+                              aria-label="Imprimir acta de entrega"
+                              title="Imprimir acta de entrega"
+                              onClick={() => handlePrint(acta.id_acta)}
+                            >
+                              <PrintIcon />
+                            </IconButton>
+                            <IconButton
+                              aria-label="Registrar devolución"
+                              title="Registrar devolución"
+                              color="error"
+                              onClick={() => initiateReturn(acta.id_acta)}
+                            >
+                              <AssignmentReturnIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               )}
             </Paper>
           </Box>
@@ -288,6 +312,7 @@ const Asignaciones = () => {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
+        fullScreen={dialogoPantallaCompleta}
         maxWidth="sm"
         fullWidth
         aria-labelledby="asignacion-form-dialog-title"

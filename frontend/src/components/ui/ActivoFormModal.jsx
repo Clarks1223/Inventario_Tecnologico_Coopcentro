@@ -10,6 +10,7 @@ import {
   MenuItem,
   Button,
 } from '@mui/material';
+import { useDialogFullScreen } from '../../hooks/useDialogFullScreen';
 import ComputoFields from './ComputoFields';
 import DispositivoMovilFields from './DispositivoMovilFields';
 import ImpresoraFields from './ImpresoraFields';
@@ -31,6 +32,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
 
   const titleId = useId();
   const contentId = useId();
+  const dialogoPantallaCompleta = useDialogFullScreen();
 
   const oficinasSeleccionables = oficinas.filter(
     (of) => of.activo || of.id_oficina === baseData.id_oficina,
@@ -41,6 +43,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
+        fullScreen={dialogoPantallaCompleta}
         maxWidth="md"
         fullWidth
         aria-labelledby={titleId}
@@ -87,7 +90,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 ))}
               </TextField>
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Marca"
                 fullWidth
@@ -97,7 +100,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 }
               />
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Modelo"
                 fullWidth
@@ -107,7 +110,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 }
               />
             </Grid>
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Serial"
                 fullWidth
@@ -119,7 +122,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
               />
             </Grid>
 
-            <Grid size={{ xs: 6 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Código de Inventario"
                 fullWidth

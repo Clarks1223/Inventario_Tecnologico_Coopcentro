@@ -40,7 +40,18 @@ const DataTable = memo(function DataTable({
               </TableCell>
             ))}
             {renderActions && (
-              <TableCell align="right">Acciones</TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  position: 'sticky',
+                  right: 0,
+                  bgcolor: 'background.paper',
+                  boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                  zIndex: 2,
+                }}
+              >
+                Acciones
+              </TableCell>
             )}
           </TableRow>
         </TableHead>
@@ -60,7 +71,16 @@ const DataTable = memo(function DataTable({
                   </TableCell>
                 ))}
                 {renderActions && (
-                  <TableCell align="right">
+                  <TableCell
+                    align="right"
+                    sx={{
+                      position: 'sticky',
+                      right: 0,
+                      bgcolor: 'background.paper',
+                      boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                      zIndex: 1,
+                    }}
+                  >
                     {renderActions(row)}
                   </TableCell>
                 )}

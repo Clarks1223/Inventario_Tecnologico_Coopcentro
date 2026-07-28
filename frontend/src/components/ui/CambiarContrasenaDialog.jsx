@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useDialogFullScreen } from '../../hooks/useDialogFullScreen';
 import { useSession } from '../../hooks/useSession';
 import { useSnackbar } from '../../hooks/useSnackbar';
 import { usuariosTiService } from '../../services/usuariosTiService';
@@ -18,6 +19,7 @@ const CambiarContrasenaDialog = ({ open, forced = false, onClose }) => {
   const { sesion, updateSesion } = useSession();
   const showSnackbar = useSnackbar();
   const titleId = useId();
+  const dialogoPantallaCompleta = useDialogFullScreen();
   const [contrasenaActual, setContrasenaActual] = useState('');
   const [contrasenaNueva, setContrasenaNueva] = useState('');
   const [confirmarContrasenaNueva, setConfirmarContrasenaNueva] = useState('');
@@ -78,6 +80,7 @@ const CambiarContrasenaDialog = ({ open, forced = false, onClose }) => {
     <Dialog
       open={open}
       onClose={handleClose}
+      fullScreen={dialogoPantallaCompleta}
       maxWidth="sm"
       fullWidth
       aria-labelledby={titleId}

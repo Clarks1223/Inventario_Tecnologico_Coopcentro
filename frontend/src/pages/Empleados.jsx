@@ -30,6 +30,7 @@ import BlockIcon from '@mui/icons-material/Block';
 import RestoreFromTrashIcon from '@mui/icons-material/RestoreFromTrash';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useEmpleados } from '../hooks/useEmpleados';
+import { useDialogFullScreen } from '../hooks/useDialogFullScreen';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import PageHeader from '../components/ui/PageHeader';
 import PageToolbar from '../components/ui/PageToolbar';
@@ -71,6 +72,8 @@ const Empleados = () => {
   const cargosSeleccionables = cargos.filter(
     (c) => c.activo || c.id_cargo === currentEmpleado.id_cargo,
   );
+
+  const dialogoPantallaCompleta = useDialogFullScreen();
 
   return (
     <Box>
@@ -193,7 +196,19 @@ const Empleados = () => {
                   </Select>
                 </FormControl>
               </TableCell>
-              <TableCell align="right" sx={{ width: 80 }}>Acciones</TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  width: 80,
+                  position: 'sticky',
+                  right: 0,
+                  bgcolor: 'background.paper',
+                  boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                  zIndex: 2,
+                }}
+              >
+                Acciones
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -217,7 +232,16 @@ const Empleados = () => {
                   <TableCell>{row.extension_telefonica}</TableCell>
                   <TableCell>{row.nombre_cargo}</TableCell>
                   <TableCell>{row.nombre_oficina}</TableCell>
-                  <TableCell align="right">
+                  <TableCell
+                    align="right"
+                    sx={{
+                      position: 'sticky',
+                      right: 0,
+                      bgcolor: 'background.paper',
+                      boxShadow: '-2px 0 4px rgba(0,0,0,0.08)',
+                      zIndex: 1,
+                    }}
+                  >
                     <IconButton aria-label="Editar empleado" onClick={() => openDialog(row)}>
                       <EditIcon />
                     </IconButton>
@@ -265,7 +289,14 @@ const Empleados = () => {
         />
       </TableContainer>
 
-      <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby="empleados-form-dialog-title">
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        fullScreen={dialogoPantallaCompleta}
+        maxWidth="sm"
+        fullWidth
+        aria-labelledby="empleados-form-dialog-title"
+      >
         <DialogTitle id="empleados-form-dialog-title">
           {isEdit ? 'Editar Empleado' : 'Nuevo Empleado'}
         </DialogTitle>

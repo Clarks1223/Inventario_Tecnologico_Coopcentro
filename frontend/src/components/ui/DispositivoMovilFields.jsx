@@ -8,7 +8,7 @@ const DispositivoMovilFields = memo(function DispositivoMovilFields({ detailData
       <Grid size={{ xs: 12 }}>
         <Typography variant="h6">Detalles Dispositivo Móvil</Typography>
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Tipo de Dispositivo"
           fullWidth
@@ -18,7 +18,7 @@ const DispositivoMovilFields = memo(function DispositivoMovilFields({ detailData
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Sistema Operativo"
           fullWidth
@@ -28,7 +28,7 @@ const DispositivoMovilFields = memo(function DispositivoMovilFields({ detailData
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="IMEI"
           fullWidth
@@ -38,7 +38,7 @@ const DispositivoMovilFields = memo(function DispositivoMovilFields({ detailData
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Número de Línea"
           fullWidth
@@ -48,7 +48,7 @@ const DispositivoMovilFields = memo(function DispositivoMovilFields({ detailData
           }
         />
       </Grid>
-      <Grid size={{ xs: 6 }}>
+      <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
           label="Almacenamiento (GB)"
           type="number"
