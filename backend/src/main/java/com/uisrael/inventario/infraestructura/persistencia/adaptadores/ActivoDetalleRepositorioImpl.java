@@ -22,6 +22,11 @@ public class ActivoDetalleRepositorioImpl implements IActivoDetalleRepositorio {
 	@Override
 	public ActivoDetalle guardar(ActivoDetalle nuevoActivoDetalle) {
 		ActivoDetalleEntity entity = entityMapper.toEntity(nuevoActivoDetalle);
+		// El mapper crea la entidad con nuevo=true; si la fila ya existe hay que
+		// marcarla como existente para que save() haga UPDATE y no INSERT.
+		if (jpaRepositorio.existsById(nuevoActivoDetalle.getIdActivo())) {
+			entity.setNuevo(false);
+		}
 		ActivoDetalleEntity guardado = jpaRepositorio.save(entity);
 		return entityMapper.toDomain(guardado);
 	}
@@ -37,13 +42,13 @@ public class ActivoDetalleRepositorioImpl implements IActivoDetalleRepositorio {
 	}
 
 	@Override
-	public Optional<ActivoDetalle> buscarPorIp(String ip) {
-		return jpaRepositorio.findByIp(ip).map(entityMapper::toDomain);
+	public List<ActivoDetalle> buscarPorIp(String ip) {
+		return jpaRepositorio.findByIp(ip).stream().map(entityMapper::toDomain).toList();
 	}
 
 	@Override
-	public Optional<ActivoDetalle> buscarPorDominio(String dominio) {
-		return jpaRepositorio.findByDominio(dominio).map(entityMapper::toDomain);
+	public List<ActivoDetalle> buscarPorDominio(String dominio) {
+		return jpaRepositorio.findByDominio(dominio).stream().map(entityMapper::toDomain).toList();
 	}
 
 	@Override

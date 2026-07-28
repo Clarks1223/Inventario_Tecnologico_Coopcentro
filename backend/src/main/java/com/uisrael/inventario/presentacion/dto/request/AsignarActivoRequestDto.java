@@ -7,16 +7,16 @@ import lombok.Data;
 @Data
 public class AsignarActivoRequestDto {
 
-	@NotNull
-	@Positive
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
 	private Integer idActivo;
 
-	@NotNull
-	@Positive
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
 	private Integer idEmpleado;
 
-	@NotNull
-	@Positive
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
 	private Integer idUsuarioTi;
 
 	private String motivo;

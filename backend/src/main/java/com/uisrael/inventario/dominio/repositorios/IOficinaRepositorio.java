@@ -9,5 +9,6 @@ public interface IOficinaRepositorio {
 	Oficina guardar(Oficina nuevaOficina);
 	Optional<Oficina> buscarPorId(int idOficina);
 	List<Oficina> listarTodos();
+	List<Oficina> buscarPorNombre(String nombre);
 	void eliminar(int idOficina);
 }

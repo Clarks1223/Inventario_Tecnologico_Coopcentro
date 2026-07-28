@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class DevolverTodoEmpleadoRequestDto {
 
-	@NotNull
-	@Positive
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
 	private Integer idEmpleado;
 
 	private String motivo;

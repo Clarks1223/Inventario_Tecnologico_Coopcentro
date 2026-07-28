@@ -74,11 +74,14 @@ public class ActivoDetalleEntity implements Persistable<Integer> {
 	@Column(name = "tipo_almacenamiento", length = 20)
 	private String tipoAlmacenamiento;
 
-	@Column(name = "ip", columnDefinition = "inet", unique = true)
+	// Sin unique en BD: la unicidad de ip/dominio se valida en ActivoUseCaseImpl
+	// solo contra activos operativos, para poder reutilizar los valores de
+	// activos dados de baja o robados/perdidos.
+	@Column(name = "ip", columnDefinition = "inet")
 	@JdbcTypeCode(SqlTypes.INET)
 	private String ip;
 
-	@Column(name = "dominio", length = 150, unique = true)
+	@Column(name = "dominio", length = 150)
 	private String dominio;
 
 	@Column(name = "almacenamiento_gb")

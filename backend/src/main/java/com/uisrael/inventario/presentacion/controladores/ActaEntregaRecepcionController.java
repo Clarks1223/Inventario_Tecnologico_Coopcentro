@@ -57,6 +57,11 @@ public class ActaEntregaRecepcionController {
 		return ResponseEntity.noContent().build();
 	}
 
+	@GetMapping("/imprimibles-empleado/{idEmpleado}")
+	public List<Integer> listarActasImprimibles(@PathVariable("idEmpleado") int idEmpleado) {
+		return actaDocumentoUseCase.listarActasImprimibles(idEmpleado);
+	}
+
 	@GetMapping("/{id}/imprimir")
 	public ResponseEntity<byte[]> imprimir(@PathVariable("id") int id) {
 		byte[] pdf = actaDocumentoUseCase.generarPdf(id);

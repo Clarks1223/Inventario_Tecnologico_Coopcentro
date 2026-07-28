@@ -37,6 +37,11 @@ public class OficinaRepositorioImpl implements IOficinaRepositorio {
 	}
 
 	@Override
+	public List<Oficina> buscarPorNombre(String nombre) {
+		return jpaRepositorio.findByNombre(nombre).stream().map(entityMapper::toDomain).toList();
+	}
+
+	@Override
 	public void eliminar(int idOficina) {
 		jpaRepositorio.deleteById(idOficina);
 	}

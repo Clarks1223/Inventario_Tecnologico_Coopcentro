@@ -71,7 +71,7 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 				.orElseThrow(() -> new RuntimeException("Activo no encontrado"));
 
 		if (!"NO_ASIGNADO".equals(activo.getEstado())) {
-			throw new RuntimeException("El activo no esta disponible para asignar");
+			throw new RuntimeException("El activo ya esta asignado");
 		}
 
 		Empleado empleado = empleadoRepositorio.buscarPorId(idEmpleado)
@@ -112,7 +112,7 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 		ActaEntregaRecepcion acta = buscarPorId(idActa);
 
 		if (!ESTADO_ACTIVA.equals(acta.getEstadoAsignacion())) {
-			throw new RuntimeException("Esta asignacion ya fue devuelta");
+			throw new RuntimeException("Este activo no tiene una asignacion activa");
 		}
 
 		acta.setFechaDevolucion(LocalDateTime.now());

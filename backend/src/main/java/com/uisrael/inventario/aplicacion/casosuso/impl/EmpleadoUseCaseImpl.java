@@ -33,13 +33,13 @@ public class EmpleadoUseCaseImpl implements IEmpleadoUseCase {
 		repositorio.buscarPorCedula(nuevoEmpleado.getCedula())
 				.filter(existente -> existente.getIdEmpleado() != nuevoEmpleado.getIdEmpleado())
 				.ifPresent(existente -> {
-					throw new RuntimeException("Ya existe un empleado registrado con esa cedula");
+					throw new RuntimeException("Ya existe un empleado con esa cedula");
 				});
 
 		repositorio.buscarPorCorreo(nuevoEmpleado.getCorreo())
 				.filter(existente -> existente.getIdEmpleado() != nuevoEmpleado.getIdEmpleado())
 				.ifPresent(existente -> {
-					throw new RuntimeException("Ya existe un empleado registrado con ese correo");
+					throw new RuntimeException("Ya existe un empleado con ese correo");
 				});
 
 		Oficina oficina = oficinaRepositorio.buscarPorId(nuevoEmpleado.getIdOficina())

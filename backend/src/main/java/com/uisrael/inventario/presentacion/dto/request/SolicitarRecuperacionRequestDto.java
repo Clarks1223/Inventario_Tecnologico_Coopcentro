@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class SolicitarRecuperacionRequestDto {
 
-	@NotBlank
-	@Email
+	@NotBlank(message = "es obligatorio")
+	@Email(message = "debe ser un correo electrónico válido")
 	private String correo;
 
 }

@@ -10,13 +10,13 @@ import lombok.Data;
 @Data
 public class UsuarioTiRequestDto {
 
-	@NotNull
-	@Positive
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
 	private Integer idEmpleado;
 
-	@NotBlank
-	@Email
-	@Size(max = 254)
+	@NotBlank(message = "es obligatorio")
+	@Email(message = "debe ser un correo electrónico válido")
+	@Size(max = 254, message = "no debe superar 254 caracteres")
 	private String correo;
 
 }

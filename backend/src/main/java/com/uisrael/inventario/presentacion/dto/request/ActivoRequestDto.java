@@ -11,47 +11,46 @@ import lombok.Data;
 @Data
 public class ActivoRequestDto {
 
-	@NotBlank
-	@Size(max = 50)
+	@NotBlank(message = "es obligatorio")
+	@Size(max = 50, message = "no debe superar 50 caracteres")
 	private String codigoInventario;
 
-	@NotBlank
+	@NotBlank(message = "es obligatorio")
 	@Pattern(regexp = "impresora_termica|dispositivo_movil|desktop|laptop|periferico",
-			message = "tipoActivo debe ser impresora_termica, dispositivo_movil, desktop, laptop o periferico")
+			message = "debe ser impresora_termica, dispositivo_movil, desktop, laptop o periferico")
 	private String tipoActivo;
 
-	@NotBlank
-	@Size(min = 2, max = 20)
+	@NotBlank(message = "es obligatorio")
+	@Size(min = 2, max = 20, message = "debe tener entre 2 y 20 caracteres")
 	@Pattern(
 			regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\\s]+$",
-			message = "Solo se permiten letras y espacios."
+			message = "solo puede contener letras y espacios"
 	)
 	private String marca;
 
-	@NotBlank
-	@Size(max = 100)
+	@NotBlank(message = "es obligatorio")
+	@Size(min = 3, max = 40, message = "debe tener entre 3 y 40 caracteres")
 	@Pattern(
 			regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s]+$",
-			message = "Solo se permiten letras, números y espacios."
+			message = "solo puede contener letras, números y espacios"
 	)
-	@Size(min = 3, max = 40)
 	private String modelo;
 
-	@NotBlank
-	@Size(min = 5, max = 25)
+	@NotBlank(message = "es obligatorio")
+	@Size(min = 5, max = 25, message = "debe tener entre 5 y 25 caracteres")
 	@Pattern(
 			regexp = "^[\\p{L}0-9\\s/\\-]+$",
-			message = "Solo se permiten letras, números, espacios, guiones (-) y barras (/)."
+			message = "solo puede contener letras, números, espacios, guiones (-) y barras (/)"
 	)
 	private String serial;
 
-	@NotBlank
+	@NotBlank(message = "es obligatorio")
 	@Pattern(regexp = "NO_ASIGNADO|ASIGNADO|DADO_DE_BAJA|ROBADO_PERDIDO",
-			message = "estado debe ser NO_ASIGNADO, ASIGNADO, DADO_DE_BAJA o ROBADO_PERDIDO")
+			message = "debe ser NO_ASIGNADO, ASIGNADO, DADO_DE_BAJA o ROBADO_PERDIDO")
 	private String estado;
 
-	@NotNull
-	@Positive
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
 	private Integer idOficina;
 
 	private String observaciones;

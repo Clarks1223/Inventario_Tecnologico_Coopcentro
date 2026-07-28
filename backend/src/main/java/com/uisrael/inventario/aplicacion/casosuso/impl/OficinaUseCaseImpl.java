@@ -16,6 +16,12 @@ public class OficinaUseCaseImpl implements IOficinaUseCase {
 
 	@Override
 	public Oficina guardar(Oficina nuevaOficina) {
+		repositorio.buscarPorNombre(nuevaOficina.getNombre()).stream()
+				.filter(existente -> existente.getIdOficina() != nuevaOficina.getIdOficina())
+				.findFirst()
+				.ifPresent(existente -> {
+					throw new RuntimeException("Ya existe una oficina con ese nombre");
+				});
 		return repositorio.guardar(nuevaOficina);
 	}
 

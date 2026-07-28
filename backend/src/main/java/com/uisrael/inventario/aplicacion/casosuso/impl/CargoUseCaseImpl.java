@@ -16,6 +16,13 @@ public class CargoUseCaseImpl implements ICargoUseCase {
 
 	@Override
 	public Cargo guardar(Cargo nuevoCargo) {
+		nuevoCargo.setNombre(nuevoCargo.getNombre().toUpperCase());
+		repositorio.buscarPorNombre(nuevoCargo.getNombre()).stream()
+				.filter(existente -> existente.getIdCargo() != nuevoCargo.getIdCargo())
+				.findFirst()
+				.ifPresent(existente -> {
+					throw new RuntimeException("Ya existe un cargo con ese nombre");
+				});
 		return repositorio.guardar(nuevoCargo);
 	}
 

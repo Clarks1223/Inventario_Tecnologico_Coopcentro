@@ -5,12 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaDocumentoUseCase;
@@ -170,56 +170,162 @@ public class ActaDocumentoUseCaseImpl implements IActaDocumentoUseCase {
 	}
 
 	/**
-	 * Busca los perifericos (teclado/mouse/monitor/otros) actualmente asignados
-	 * al mismo empleado y los agrega a las casillas dedicadas de la plantilla de
-	 * PCs (o a los 2 slots genericos "Periferico_AdicionalN" si no calzan con
-	 * ninguna de las 3 categorias con casilla propia).
+	 * Ubicacion que le toco a un periferico en el reparto entre las PCs del
+	 * empleado: indiceEquipo -1 significa que no cupo en ninguna acta.
 	 */
-	private void completarPerifericosDelEmpleado(int idEmpleado, int idActivoEquipo, Map<String, String> valores) {
-		List<Activo> perifericosActivos = actaRepositorio.listarTodos().stream()
+	private record UbicacionPeriferico(int indiceEquipo, String slotDedicado, int numeroAdicional,
+			String tipoDispositivo) {
+	}
+
+	private List<ActaEntregaRecepcion> actasActivasDelEmpleado(int idEmpleado) {
+		return actaRepositorio.listarTodos().stream()
 				.filter(acta -> acta.getIdEmpleado() == idEmpleado)
 				.filter(acta -> "activa".equals(acta.getEstadoAsignacion()))
-				.filter(acta -> acta.getIdActivo() != idActivoEquipo)
-				.sorted(Comparator.comparing(ActaEntregaRecepcion::getFechaAsignacion).reversed())
-				.map(acta -> activoRepositorio.buscarPorId(acta.getIdActivo()).orElse(null))
-				.filter(Objects::nonNull)
-				.filter(candidato -> "periferico".equals(candidato.getTipoActivo()))
+				.sorted(Comparator.comparing(ActaEntregaRecepcion::getFechaAsignacion)
+						.thenComparing(ActaEntregaRecepcion::getIdActa))
 				.toList();
+	}
 
-		boolean tecladoAsignado = false;
-		boolean mouseAsignado = false;
-		boolean monitorAsignado = false;
-		int adicionales = 0;
+	/**
+	 * Reparte los perifericos entre los equipos (en orden de asignacion) de modo
+	 * que cada periferico aparezca en UNA sola acta: primero intenta el slot
+	 * dedicado (teclado/mouse/monitor) de cada PC en orden, y si no hay libre
+	 * usa los 2 slots genericos "Periferico_AdicionalN". El reparto es
+	 * deterministico: mismo resultado sin importar cual acta se imprima.
+	 */
+	private Map<Integer, UbicacionPeriferico> repartirPerifericos(int totalEquipos, List<Activo> perifericos) {
+		Map<Integer, UbicacionPeriferico> reparto = new HashMap<>();
+		boolean[] tecladoOcupado = new boolean[totalEquipos];
+		boolean[] mouseOcupado = new boolean[totalEquipos];
+		boolean[] monitorOcupado = new boolean[totalEquipos];
+		int[] adicionalesOcupados = new int[totalEquipos];
 
-		for (Activo periferico : perifericosActivos) {
+		for (Activo periferico : perifericos) {
 			ActivoDetalle detallePeriferico = activoDetalleRepositorio.buscarPorId(periferico.getIdActivo()).orElse(null);
 			String tipoDispositivo = detallePeriferico == null ? null : detallePeriferico.getTipoDispositivo();
 			String tipoNormalizado = tipoDispositivo == null ? "" : tipoDispositivo.trim().toLowerCase();
 
-			if (!tecladoAsignado && "teclado".equals(tipoNormalizado)) {
-				valores.put("Marca_Teclado", periferico.getMarca());
-				valores.put("Modelo_Teclado", periferico.getModelo());
-				valores.put("Serie_Teclado", periferico.getSerial());
-				tecladoAsignado = true;
-			} else if (!mouseAsignado && "mouse".equals(tipoNormalizado)) {
-				valores.put("Marca_Mouse", periferico.getMarca());
-				valores.put("Modelo_Mouse", periferico.getModelo());
-				valores.put("Serie_Mouse", periferico.getSerial());
-				mouseAsignado = true;
-			} else if (!monitorAsignado && "monitor".equals(tipoNormalizado)) {
-				valores.put("Marca_Monitor", periferico.getMarca());
-				valores.put("Modelo_Monitor", periferico.getModelo());
-				valores.put("Serie_Monitor", periferico.getSerial());
-				monitorAsignado = true;
-			} else if (adicionales < 2) {
-				adicionales++;
-				valores.put("NombrePeriferico_Adicional" + adicionales,
-						tipoDispositivo == null || tipoDispositivo.isBlank() ? "Periferico" : tipoDispositivo);
-				valores.put("MarcaPeriferico_Adicional" + adicionales, periferico.getMarca());
-				valores.put("ModeloPeriferico_Adicional" + adicionales, periferico.getModelo());
-				valores.put("SeriePeriferico_Adicional" + adicionales, periferico.getSerial());
+			int destino = -1;
+			String slotDedicado = null;
+			for (int i = 0; i < totalEquipos && destino == -1; i++) {
+				if ("teclado".equals(tipoNormalizado) && !tecladoOcupado[i]) {
+					tecladoOcupado[i] = true;
+					destino = i;
+					slotDedicado = "Teclado";
+				} else if ("mouse".equals(tipoNormalizado) && !mouseOcupado[i]) {
+					mouseOcupado[i] = true;
+					destino = i;
+					slotDedicado = "Mouse";
+				} else if ("monitor".equals(tipoNormalizado) && !monitorOcupado[i]) {
+					monitorOcupado[i] = true;
+					destino = i;
+					slotDedicado = "Monitor";
+				}
+			}
+			int numeroAdicional = 0;
+			if (destino == -1) {
+				for (int i = 0; i < totalEquipos && destino == -1; i++) {
+					if (adicionalesOcupados[i] < 2) {
+						adicionalesOcupados[i]++;
+						numeroAdicional = adicionalesOcupados[i];
+						destino = i;
+					}
+				}
+			}
+			reparto.put(periferico.getIdActivo(),
+					new UbicacionPeriferico(destino, slotDedicado, numeroAdicional, tipoDispositivo));
+		}
+		return reparto;
+	}
+
+	/**
+	 * Agrega al acta del equipo idActivoEquipo solo los perifericos que le
+	 * tocaron en el reparto.
+	 */
+	private void completarPerifericosDelEmpleado(int idEmpleado, int idActivoEquipo, Map<String, String> valores) {
+		List<Integer> equiposPc = new ArrayList<>();
+		List<Activo> perifericos = new ArrayList<>();
+		for (ActaEntregaRecepcion actaActiva : actasActivasDelEmpleado(idEmpleado)) {
+			Activo candidato = activoRepositorio.buscarPorId(actaActiva.getIdActivo()).orElse(null);
+			if (candidato == null) {
+				continue;
+			}
+			boolean esPc = "desktop".equals(candidato.getTipoActivo()) || "laptop".equals(candidato.getTipoActivo());
+			if (esPc && !equiposPc.contains(candidato.getIdActivo())) {
+				equiposPc.add(candidato.getIdActivo());
+			} else if ("periferico".equals(candidato.getTipoActivo())) {
+				perifericos.add(candidato);
 			}
 		}
+		// En un acta de devolucion el equipo ya no tiene asignacion "activa":
+		// participa al final del reparto para seguir mostrando los perifericos
+		// que le correspondan sin quitarselos a las PCs aun asignadas.
+		if (!equiposPc.contains(idActivoEquipo)) {
+			equiposPc.add(idActivoEquipo);
+		}
+
+		int indiceEquipoActa = equiposPc.indexOf(idActivoEquipo);
+		Map<Integer, UbicacionPeriferico> reparto = repartirPerifericos(equiposPc.size(), perifericos);
+
+		for (Activo periferico : perifericos) {
+			UbicacionPeriferico ubicacion = reparto.get(periferico.getIdActivo());
+			if (ubicacion == null || ubicacion.indiceEquipo() != indiceEquipoActa) {
+				continue;
+			}
+			if (ubicacion.slotDedicado() != null) {
+				valores.put("Marca_" + ubicacion.slotDedicado(), periferico.getMarca());
+				valores.put("Modelo_" + ubicacion.slotDedicado(), periferico.getModelo());
+				valores.put("Serie_" + ubicacion.slotDedicado(), periferico.getSerial());
+			} else if (ubicacion.numeroAdicional() > 0) {
+				String tipoDispositivo = ubicacion.tipoDispositivo();
+				valores.put("NombrePeriferico_Adicional" + ubicacion.numeroAdicional(),
+						tipoDispositivo == null || tipoDispositivo.isBlank() ? "Periferico" : tipoDispositivo);
+				valores.put("MarcaPeriferico_Adicional" + ubicacion.numeroAdicional(), periferico.getMarca());
+				valores.put("ModeloPeriferico_Adicional" + ubicacion.numeroAdicional(), periferico.getModelo());
+				valores.put("SeriePeriferico_Adicional" + ubicacion.numeroAdicional(), periferico.getSerial());
+			}
+		}
+	}
+
+	/**
+	 * Devuelve las actas que hay que imprimir para cubrir todo lo asignado al
+	 * empleado sin duplicar papel: las actas de PCs/moviles/impresoras siempre,
+	 * y las actas individuales solo de los perifericos que NO cupieron
+	 * embebidos en ninguna acta de PC.
+	 */
+	@Override
+	public List<Integer> listarActasImprimibles(int idEmpleado) {
+		List<Integer> resultado = new ArrayList<>();
+		List<Integer> equiposPc = new ArrayList<>();
+		List<Activo> perifericos = new ArrayList<>();
+		Map<Integer, Integer> actaPorActivo = new HashMap<>();
+
+		for (ActaEntregaRecepcion actaActiva : actasActivasDelEmpleado(idEmpleado)) {
+			Activo candidato = activoRepositorio.buscarPorId(actaActiva.getIdActivo()).orElse(null);
+			if (candidato == null) {
+				continue;
+			}
+			actaPorActivo.put(candidato.getIdActivo(), actaActiva.getIdActa());
+			switch (candidato.getTipoActivo()) {
+				case "desktop", "laptop" -> {
+					if (!equiposPc.contains(candidato.getIdActivo())) {
+						equiposPc.add(candidato.getIdActivo());
+					}
+					resultado.add(actaActiva.getIdActa());
+				}
+				case "periferico" -> perifericos.add(candidato);
+				default -> resultado.add(actaActiva.getIdActa());
+			}
+		}
+
+		Map<Integer, UbicacionPeriferico> reparto = repartirPerifericos(equiposPc.size(), perifericos);
+		for (Activo periferico : perifericos) {
+			UbicacionPeriferico ubicacion = reparto.get(periferico.getIdActivo());
+			if (ubicacion == null || ubicacion.indiceEquipo() == -1) {
+				resultado.add(actaPorActivo.get(periferico.getIdActivo()));
+			}
+		}
+		return resultado;
 	}
 
 	private void guardarEnCarpeta(byte[] pdf, String oficina, String nombreCompleto, String cedula, boolean esEntrega,

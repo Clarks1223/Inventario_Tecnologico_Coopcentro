@@ -37,6 +37,11 @@ public class CargoRepositorioImpl implements ICargoRepositorio {
 	}
 
 	@Override
+	public List<Cargo> buscarPorNombre(String nombre) {
+		return jpaRepositorio.findByNombre(nombre).stream().map(entityMapper::toDomain).toList();
+	}
+
+	@Override
 	public void eliminar(int idCargo) {
 		jpaRepositorio.deleteById(idCargo);
 	}

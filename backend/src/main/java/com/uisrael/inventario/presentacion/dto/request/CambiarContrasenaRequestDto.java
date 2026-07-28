@@ -6,13 +6,13 @@ import lombok.Data;
 @Data
 public class CambiarContrasenaRequestDto {
 
-	@NotBlank
+	@NotBlank(message = "es obligatorio")
 	private String contrasenaActual;
 
-	@NotBlank
+	@NotBlank(message = "es obligatorio")
 	private String contrasenaNueva;
 
-	@NotBlank
+	@NotBlank(message = "es obligatorio")
 	private String confirmarContrasenaNueva;
 
 }

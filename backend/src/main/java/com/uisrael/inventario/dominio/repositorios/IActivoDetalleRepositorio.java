@@ -9,8 +9,8 @@ public interface IActivoDetalleRepositorio {
 	ActivoDetalle guardar(ActivoDetalle nuevoActivoDetalle);
 	Optional<ActivoDetalle> buscarPorId(int idActivo);
 	Optional<ActivoDetalle> buscarPorImei(String imei);
-	Optional<ActivoDetalle> buscarPorIp(String ip);
-	Optional<ActivoDetalle> buscarPorDominio(String dominio);
+	List<ActivoDetalle> buscarPorIp(String ip);
+	List<ActivoDetalle> buscarPorDominio(String dominio);
 	List<ActivoDetalle> listarTodos();
 	void eliminar(int idActivo);
 }

@@ -29,7 +29,20 @@ public class ActivoUseCaseImpl implements IActivoUseCase {
 		Oficina oficina = oficinaRepositorio.buscarPorId(nuevoActivo.getIdOficina())
 				.orElseThrow(() -> new RuntimeException("Oficina no encontrada"));
 
-		boolean esAsignacionNueva = repositorio.buscarPorId(nuevoActivo.getIdActivo())
+		Optional<Activo> activoExistente = repositorio.buscarPorId(nuevoActivo.getIdActivo());
+		String estadoAnterior = activoExistente.map(Activo::getEstado).orElse(null);
+
+		// El estado ASIGNADO entra y sale unicamente por el modulo de asignaciones
+		// (actas de entrega/recepcion), para no romper la cadena de custodia.
+		if ("ASIGNADO".equals(estadoAnterior) && !"ASIGNADO".equals(nuevoActivo.getEstado())) {
+			throw new RuntimeException(
+					"El activo esta asignado a un empleado; registre la devolucion antes de cambiar su estado");
+		}
+		if (!"ASIGNADO".equals(estadoAnterior) && "ASIGNADO".equals(nuevoActivo.getEstado())) {
+			throw new RuntimeException("El estado Asignado solo se establece al registrar una asignacion");
+		}
+
+		boolean esAsignacionNueva = activoExistente
 				.map(actual -> actual.getIdOficina() != nuevoActivo.getIdOficina())
 				.orElse(true);
 		if (esAsignacionNueva && !oficina.isActivo()) {
@@ -39,18 +52,18 @@ public class ActivoUseCaseImpl implements IActivoUseCase {
 		repositorio.buscarPorSerial(nuevoActivo.getSerial())
 				.filter(existente -> existente.getIdActivo() != nuevoActivo.getIdActivo())
 				.ifPresent(existente -> {
-					throw new RuntimeException("Ya existe un activo registrado con ese serial");
+					throw new RuntimeException("Ya existe un activo con ese serial");
 				});
 
 		repositorio.buscarPorCodigoInventario(nuevoActivo.getCodigoInventario())
 				.filter(existente -> existente.getIdActivo() != nuevoActivo.getIdActivo())
 				.ifPresent(existente -> {
-					throw new RuntimeException("Ya existe un activo registrado con ese codigo de inventario");
+					throw new RuntimeException("Ya existe un activo con ese codigo de inventario");
 				});
 
 		ActivoDetalle detalleRelevante = filtrarDetallePorTipo(nuevoActivo.getTipoActivo(), detalle, nuevoActivo.getIdActivo());
 		normalizarBlancosANull(detalleRelevante);
-		validarUnicidadDetalle(detalleRelevante);
+		validarUnicidadDetalle(detalleRelevante, nuevoActivo.getEstado());
 
 		Activo guardado = repositorio.guardar(nuevoActivo);
 		detalleRelevante.setIdActivo(guardado.getIdActivo());
@@ -68,28 +81,40 @@ public class ActivoUseCaseImpl implements IActivoUseCase {
 		return (valor == null || valor.isBlank()) ? null : valor;
 	}
 
-	private void validarUnicidadDetalle(ActivoDetalle detalle) {
+	private void validarUnicidadDetalle(ActivoDetalle detalle, String estadoDelActivo) {
 		if (detalle.getImei() != null) {
 			detalleRepositorio.buscarPorImei(detalle.getImei())
 					.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
 					.ifPresent(existente -> {
-						throw new RuntimeException("Ya existe un activo registrado con ese IMEI");
+						throw new RuntimeException("Ya existe un activo con ese IMEI");
 					});
 		}
-		if (detalle.getIp() != null) {
-			detalleRepositorio.buscarPorIp(detalle.getIp())
-					.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
-					.ifPresent(existente -> {
-						throw new RuntimeException("Ya existe un activo registrado con esa IP");
-					});
+		// IP y dominio solo deben ser unicos entre activos operativos: los valores
+		// de un activo dado de baja o robado/perdido quedan libres para reutilizarse,
+		// y un activo fuera de servicio tampoco compite por ellos al editarse.
+		boolean fueraDeServicio = "DADO_DE_BAJA".equals(estadoDelActivo) || "ROBADO_PERDIDO".equals(estadoDelActivo);
+		if (fueraDeServicio) {
+			return;
 		}
-		if (detalle.getDominio() != null) {
-			detalleRepositorio.buscarPorDominio(detalle.getDominio())
-					.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
-					.ifPresent(existente -> {
-						throw new RuntimeException("Ya existe un activo registrado con ese dominio");
-					});
+		if (detalle.getIp() != null && existeConflictoOperativo(detalleRepositorio.buscarPorIp(detalle.getIp()), detalle)) {
+			throw new RuntimeException("Ya existe un activo operativo con esa IP");
 		}
+		if (detalle.getDominio() != null
+				&& existeConflictoOperativo(detalleRepositorio.buscarPorDominio(detalle.getDominio()), detalle)) {
+			throw new RuntimeException("Ya existe un activo operativo con ese dominio");
+		}
+	}
+
+	private boolean existeConflictoOperativo(List<ActivoDetalle> coincidencias, ActivoDetalle detalle) {
+		return coincidencias.stream()
+				.filter(existente -> existente.getIdActivo() != detalle.getIdActivo())
+				.anyMatch(existente -> estaOperativo(existente.getIdActivo()));
+	}
+
+	private boolean estaOperativo(int idActivo) {
+		return repositorio.buscarPorId(idActivo)
+				.map(activo -> !"DADO_DE_BAJA".equals(activo.getEstado()) && !"ROBADO_PERDIDO".equals(activo.getEstado()))
+				.orElse(false);
 	}
 
 	@Override

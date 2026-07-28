@@ -9,19 +9,19 @@ import lombok.Data;
 @Data
 public class OficinaRequestDto {
 
-	@NotBlank
-	@Size(min = 3, max = 20)
+	@NotBlank(message = "es obligatorio")
+	@Size(min = 3, max = 20, message = "debe tener entre 3 y 20 caracteres")
 	@Pattern(
 			regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\\s]+$",
-			message = "Solo se permiten letras y espacios."
+			message = "solo puede contener letras y espacios"
 	)
 	private String nombre;
 
-	@NotBlank
-	@Size(min =3, max = 100)
+	@NotBlank(message = "es obligatorio")
+	@Size(min = 3, max = 100, message = "debe tener entre 3 y 100 caracteres")
 	private String direccion;
 
-	@NotNull
+	@NotNull(message = "es obligatorio")
 	private Boolean activo;
 
 }

@@ -7,11 +7,11 @@ import lombok.Data;
 @Data
 public class LoginRequestDto {
 
-	@NotBlank
-	@Email
+	@NotBlank(message = "es obligatorio")
+	@Email(message = "debe ser un correo electrónico válido")
 	private String correo;
 
-	@NotBlank
+	@NotBlank(message = "es obligatorio")
 	private String contrasena;
 
 }

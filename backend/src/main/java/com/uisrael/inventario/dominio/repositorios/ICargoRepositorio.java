@@ -9,5 +9,6 @@ public interface ICargoRepositorio {
 	Cargo guardar(Cargo nuevoCargo);
 	Optional<Cargo> buscarPorId(int idCargo);
 	List<Cargo> listarTodos();
+	List<Cargo> buscarPorNombre(String nombre);
 	void eliminar(int idCargo);
 }
