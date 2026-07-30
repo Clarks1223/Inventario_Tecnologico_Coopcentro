@@ -26,7 +26,7 @@ import com.uisrael.inventario.infraestructura.repositorios.IUsuarioTiJpaReposito
 public class DatosInicialesSeeder implements CommandLineRunner {
 
 	private static final String NOMBRE_OFICINA_MATRIZ = "Matriz";
-	private static final String NOMBRE_CARGO_ANALISTA = "Analista de Software";
+	private static final String NOMBRE_CARGO_ANALISTA = "ANALISTA DE SOFTWARE";
 
 	private final IOficinaJpaRepositorio oficinaRepositorio;
 	private final ICargoJpaRepositorio cargoRepositorio;
