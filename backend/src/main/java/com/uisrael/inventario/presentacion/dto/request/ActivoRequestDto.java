@@ -44,15 +44,26 @@ public class ActivoRequestDto {
 	)
 	private String serial;
 
+	// Situacion del activo. A quien esta entregado NO se guarda aqui: se deriva
+	// del acta abierta. Al crear un activo este campo se ignora y siempre nace
+	// OPERATIVO bajo la custodia de quien lo registra.
 	@NotBlank(message = "es obligatorio")
-	@Pattern(regexp = "NO_ASIGNADO|ASIGNADO|DADO_DE_BAJA|ROBADO_PERDIDO",
-			message = "debe ser NO_ASIGNADO, ASIGNADO, DADO_DE_BAJA o ROBADO_PERDIDO")
+	@Pattern(regexp = "OPERATIVO|DADO_DE_BAJA|ROBADO_PERDIDO",
+			message = "debe ser OPERATIVO, DADO_DE_BAJA o ROBADO_PERDIDO")
 	private String estado;
 
 	@NotNull(message = "es obligatorio")
 	@Positive(message = "debe ser un número positivo")
 	private Integer idOficina;
 
+	@NotNull(message = "es obligatorio")
+	@Positive(message = "debe ser un número positivo")
+	private Integer idUsuarioTi;
+
+	// El limite lo impone el acta: en la celda de observacion mas angosta
+	// (147 pt de las plantillas de PC) caben 40 caracteres al tamano de fuente
+	// del formulario. Se deja en 30 para que quepa holgado en cualquier caso.
+	@Size(max = 30, message = "no debe superar 30 caracteres")
 	private String observaciones;
 
 	@Valid

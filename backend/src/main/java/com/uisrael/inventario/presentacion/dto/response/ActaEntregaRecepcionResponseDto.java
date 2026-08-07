@@ -15,5 +15,6 @@ public class ActaEntregaRecepcionResponseDto {
 	private LocalDateTime fechaDevolucion;
 	private String estadoAsignacion;
 	private String motivo;
+	private String observacion;
 
 }

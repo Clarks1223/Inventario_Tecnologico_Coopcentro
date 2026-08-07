@@ -46,4 +46,9 @@ public class ActaEntregaRecepcionEntity {
 	@Column(name = "motivo", columnDefinition = "TEXT")
 	private String motivo;
 
+	// Lo que se imprime en Observacion_General. El limite lo impone el ancho
+	// de ese campo en las plantillas.
+	@Column(name = "observacion", length = 100)
+	private String observacion;
+
 }

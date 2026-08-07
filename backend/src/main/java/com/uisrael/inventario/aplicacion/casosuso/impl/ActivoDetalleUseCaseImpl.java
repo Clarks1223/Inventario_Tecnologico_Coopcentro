@@ -2,8 +2,11 @@ package com.uisrael.inventario.aplicacion.casosuso.impl;
 
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoDetalleUseCase;
 import com.uisrael.inventario.dominio.entidades.ActivoDetalle;
+import com.uisrael.inventario.dominio.excepciones.NegocioException;
 import com.uisrael.inventario.dominio.repositorios.IActivoDetalleRepositorio;
 
 public class ActivoDetalleUseCaseImpl implements IActivoDetalleUseCase {
@@ -15,6 +18,7 @@ public class ActivoDetalleUseCaseImpl implements IActivoDetalleUseCase {
 	}
 
 	@Override
+	@Transactional
 	public ActivoDetalle guardar(ActivoDetalle nuevoActivoDetalle) {
 		return repositorio.guardar(nuevoActivoDetalle);
 	}
@@ -22,7 +26,7 @@ public class ActivoDetalleUseCaseImpl implements IActivoDetalleUseCase {
 	@Override
 	public ActivoDetalle buscarPorId(int idActivo) {
 		return repositorio.buscarPorId(idActivo)
-				.orElseThrow(() -> new RuntimeException("ActivoDetalle no encontrado"));
+				.orElseThrow(() -> new NegocioException("ActivoDetalle no encontrado"));
 	}
 
 	@Override
@@ -31,6 +35,7 @@ public class ActivoDetalleUseCaseImpl implements IActivoDetalleUseCase {
 	}
 
 	@Override
+	@Transactional
 	public void eliminar(int idActivo) {
 		repositorio.eliminar(idActivo);
 	}

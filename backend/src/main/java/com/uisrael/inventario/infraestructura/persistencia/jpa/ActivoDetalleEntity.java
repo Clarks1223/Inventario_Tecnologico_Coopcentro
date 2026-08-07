@@ -87,6 +87,14 @@ public class ActivoDetalleEntity implements Persistable<Integer> {
 	@Column(name = "almacenamiento_gb")
 	private Integer almacenamientoGb;
 
+	// Accesorios entregados junto al equipo (dispositivo_movil / impresora_termica).
+	// Nullable a proposito: null = no aplica al tipo de activo.
+	@Column(name = "incluye_cargador")
+	private Boolean incluyeCargador;
+
+	@Column(name = "incluye_cable_usb")
+	private Boolean incluyeCableUsb;
+
 	@Override
 	public Integer getId() {
 		return idActivo;

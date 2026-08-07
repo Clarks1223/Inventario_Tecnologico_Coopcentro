@@ -22,6 +22,8 @@ import com.uisrael.inventario.dominio.entidades.Cargo;
 import com.uisrael.inventario.dominio.entidades.Empleado;
 import com.uisrael.inventario.dominio.entidades.Oficina;
 import com.uisrael.inventario.dominio.entidades.UsuarioTi;
+import com.uisrael.inventario.dominio.valores.EstadoActa;
+import com.uisrael.inventario.dominio.valores.EstadoActivo;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.ActaEntregaRecepcionEntity;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.ActivoEntity;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.CargoEntity;
@@ -127,7 +129,7 @@ class InventarioApplicationTests {
 		activo.setMarca("Dell");
 		activo.setModelo("Latitude 5540");
 		activo.setSerial("SN-ABC123456");
-		activo.setEstado("disponible");
+		activo.setEstado(EstadoActivo.OPERATIVO);
 		activo.setOficina(oficina);
 		activo.setObservaciones("Equipo nuevo");
 		activo.setCreatedAt(LocalDateTime.now());
@@ -140,7 +142,7 @@ class InventarioApplicationTests {
 		acta.setEmpleado(empleado);
 		acta.setUsuarioTi(usuarioTi);
 		acta.setFechaAsignacion(LocalDateTime.now());
-		acta.setEstadoAsignacion("activa");
+		acta.setEstadoAsignacion(EstadoActa.ACTIVA);
 		acta.setMotivo("Dotacion inicial de equipo");
 		repoActa.save(acta);
 
@@ -216,43 +218,78 @@ class InventarioApplicationTests {
 		Empleado usuarioGuardado = empleadoUseCase.guardar(usuario);
 		System.out.println("** Empleado usuario creado: " + usuarioGuardado.getIdEmpleado());
 
-		// 5. Tres activos
+		int idTi = usuarioTiGuardado.getIdUsuarioTi();
+
+		// 5. Tres activos. Nacen OPERATIVO y bajo la custodia de quien los registra:
+		// no debe existir en ningun momento un activo sin acta abierta.
 		Activo activo1Guardado = activoUseCase.guardar(
-				nuevoActivoLaptop("INV-CRUD-001", "SN-CRUD-001", oficinaGuardada.getIdOficina()), null);
+				nuevoActivoLaptop("INV-CRUD-001", "SN-CRUD-001", oficinaGuardada.getIdOficina()), null, idTi);
 		Activo activo2Guardado = activoUseCase.guardar(
-				nuevoActivoLaptop("INV-CRUD-002", "SN-CRUD-002", oficinaGuardada.getIdOficina()), null);
+				nuevoActivoLaptop("INV-CRUD-002", "SN-CRUD-002", oficinaGuardada.getIdOficina()), null, idTi);
 		Activo activo3Guardado = activoUseCase.guardar(
-				nuevoActivoLaptop("INV-CRUD-003", "SN-CRUD-003", oficinaGuardada.getIdOficina()), null);
+				nuevoActivoLaptop("INV-CRUD-003", "SN-CRUD-003", oficinaGuardada.getIdOficina()), null, idTi);
 		System.out.println("** Activos creados: " + activo1Guardado.getIdActivo() + ", "
 				+ activo2Guardado.getIdActivo() + ", " + activo3Guardado.getIdActivo());
 
-		// 6. Dar de baja el primer activo
-		activo1Guardado.setEstado("DADO_DE_BAJA");
-		Activo activo1DadoDeBaja = activoUseCase.guardar(activo1Guardado, null);
-		assertEquals("DADO_DE_BAJA", activo1DadoDeBaja.getEstado());
-		System.out.println("** Activo 1 dado de baja");
+		assertEquals(EstadoActivo.OPERATIVO, activo1Guardado.getEstado());
+		ActaEntregaRecepcion custodiaInicial = actaAbiertaDe(activo3Guardado.getIdActivo());
+		assertEquals(EstadoActa.CUSTODIA, custodiaInicial.getEstadoAsignacion());
+		assertEquals(adminGuardado.getIdEmpleado(), custodiaInicial.getIdEmpleado());
+		System.out.println("** Los 3 activos quedaron en custodia de quien los registro");
+
+		// 6. Dar de baja el primer activo: se cierra su acta de custodia
+		activo1Guardado.setEstado(EstadoActivo.DADO_DE_BAJA);
+		Activo activo1DadoDeBaja = activoUseCase.guardar(activo1Guardado, null, idTi);
+		assertEquals(EstadoActivo.DADO_DE_BAJA, activo1DadoDeBaja.getEstado());
+		assertEquals(0, actasAbiertasDe(activo1Guardado.getIdActivo()).size());
+		System.out.println("** Activo 1 dado de baja y sin acta abierta");
 
 		// 7. Reportar el segundo activo como robado/perdido
-		activo2Guardado.setEstado("ROBADO_PERDIDO");
-		Activo activo2Robado = activoUseCase.guardar(activo2Guardado, null);
-		assertEquals("ROBADO_PERDIDO", activo2Robado.getEstado());
+		activo2Guardado.setEstado(EstadoActivo.ROBADO_PERDIDO);
+		Activo activo2Robado = activoUseCase.guardar(activo2Guardado, null, idTi);
+		assertEquals(EstadoActivo.ROBADO_PERDIDO, activo2Robado.getEstado());
+		assertEquals(0, actasAbiertasDe(activo2Guardado.getIdActivo()).size());
 		System.out.println("** Activo 2 reportado como robado/perdido");
 
-		// 8. Asignar el tercer activo al empleado usuario
+		// 8. Asignar el tercer activo: la custodia se cierra y se abre la entrega
 		ActaEntregaRecepcion acta = actaUseCase.asignar(
 				activo3Guardado.getIdActivo(),
 				usuarioGuardado.getIdEmpleado(),
-				usuarioTiGuardado.getIdUsuarioTi(),
+				idTi,
 				"Entrega inicial de equipo (prueba)");
-		assertEquals("activa", acta.getEstadoAsignacion());
-		assertEquals("ASIGNADO", activoUseCase.buscarPorId(activo3Guardado.getIdActivo()).getEstado());
+		assertEquals(EstadoActa.ACTIVA, acta.getEstadoAsignacion());
+		assertEquals(EstadoActivo.OPERATIVO, activoUseCase.buscarPorId(activo3Guardado.getIdActivo()).getEstado());
+		assertEquals(1, actasAbiertasDe(activo3Guardado.getIdActivo()).size());
+		assertEquals(acta.getIdActa(), actaAbiertaDe(activo3Guardado.getIdActivo()).getIdActa());
 		System.out.println("** Activo 3 asignado, acta " + acta.getIdActa());
 
-		// 9. Devolver el activo asignado
-		ActaEntregaRecepcion actaDevuelta = actaUseCase.devolver(acta.getIdActa(), "Devolucion de prueba");
-		assertEquals("devuelta", actaDevuelta.getEstadoAsignacion());
-		assertEquals("NO_ASIGNADO", activoUseCase.buscarPorId(activo3Guardado.getIdActivo()).getEstado());
-		System.out.println("** Activo 3 devuelto correctamente");
+		// 9. Devolver: el acta se cierra y el activo vuelve a la custodia de TI
+		ActaEntregaRecepcion actaDevuelta = actaUseCase.devolver(acta.getIdActa(), "Devolucion de prueba", idTi,
+				"Equipo recibido sin novedad");
+		assertEquals(EstadoActa.DEVUELTA, actaDevuelta.getEstadoAsignacion());
+		assertEquals(idTi, actaDevuelta.getIdUsuarioTi());
+		// El comentario del tecnico es lo que se imprime en Observacion_General.
+		assertEquals("Equipo recibido sin novedad", actaDevuelta.getObservacion());
+		assertEquals(EstadoActivo.OPERATIVO, activoUseCase.buscarPorId(activo3Guardado.getIdActivo()).getEstado());
+
+		ActaEntregaRecepcion custodiaTrasDevolucion = actaAbiertaDe(activo3Guardado.getIdActivo());
+		assertEquals(EstadoActa.CUSTODIA, custodiaTrasDevolucion.getEstadoAsignacion());
+		assertEquals(adminGuardado.getIdEmpleado(), custodiaTrasDevolucion.getIdEmpleado());
+		System.out.println("** Activo 3 devuelto y de vuelta en bodega, sin quedar huerfano");
+	}
+
+	/** Todas las actas sin cerrar de un activo: el invariante es que haya 0 o 1. */
+	private List<ActaEntregaRecepcion> actasAbiertasDe(int idActivo) {
+		return actaUseCase.listarTodos().stream()
+				.filter(acta -> acta.getIdActivo() == idActivo)
+				.filter(ActaEntregaRecepcion::estaAbierta)
+				.toList();
+	}
+
+	private ActaEntregaRecepcion actaAbiertaDe(int idActivo) {
+		List<ActaEntregaRecepcion> abiertas = actasAbiertasDe(idActivo);
+		assertEquals(1, abiertas.size(), "un activo operativo debe tener exactamente un acta abierta");
+		return abiertas.get(0);
 	}
 
 	private Activo nuevoActivoLaptop(String codigoInventario, String serial, int idOficina) {
@@ -262,7 +299,7 @@ class InventarioApplicationTests {
 		activo.setMarca("Dell");
 		activo.setModelo("Latitude 5540");
 		activo.setSerial(serial);
-		activo.setEstado("NO_ASIGNADO");
+		activo.setEstado(EstadoActivo.OPERATIVO);
 		activo.setIdOficina(idOficina);
 		activo.setObservaciones("Activo de prueba CRUD");
 		activo.setCreatedAt(LocalDateTime.now());

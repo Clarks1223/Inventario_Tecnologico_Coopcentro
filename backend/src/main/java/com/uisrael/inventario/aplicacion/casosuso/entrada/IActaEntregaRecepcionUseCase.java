@@ -9,6 +9,11 @@ public interface IActaEntregaRecepcionUseCase {
 	List<ActaEntregaRecepcion> listarTodos();
 	void eliminar(int idActa);
 	ActaEntregaRecepcion asignar(int idActivo, int idEmpleado, int idUsuarioTi, String motivo);
-	ActaEntregaRecepcion devolver(int idActa, String motivo);
-	List<ActaEntregaRecepcion> devolverTodoEmpleado(int idEmpleado, String motivo);
+	/**
+	 * @param idUsuarioTi usuario en sesion que recibe la devolucion; firma el
+	 *                    acta de recepcion y queda como custodio del activo.
+	 */
+	ActaEntregaRecepcion devolver(int idActa, String motivo, int idUsuarioTi, String observacion);
+	List<ActaEntregaRecepcion> devolverTodoEmpleado(int idEmpleado, String motivo, int idUsuarioTi,
+			String observacion);
 }

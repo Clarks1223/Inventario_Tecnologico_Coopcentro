@@ -154,8 +154,10 @@ public class InventarioConfig {
 
 	@Bean
 	IActivoUseCase activoUseCase(IActivoRepositorio repositorio, IActivoDetalleRepositorio detalleRepositorio,
-			IOficinaRepositorio oficinaRepositorio) {
-		return new ActivoUseCaseImpl(repositorio, detalleRepositorio, oficinaRepositorio);
+			IOficinaRepositorio oficinaRepositorio, IActaEntregaRecepcionRepositorio actaRepositorio,
+			IUsuarioTiRepositorio usuarioTiRepositorio) {
+		return new ActivoUseCaseImpl(repositorio, detalleRepositorio, oficinaRepositorio, actaRepositorio,
+				usuarioTiRepositorio);
 	}
 
 	@Bean

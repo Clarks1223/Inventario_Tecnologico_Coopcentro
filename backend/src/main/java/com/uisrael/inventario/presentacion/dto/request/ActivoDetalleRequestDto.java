@@ -55,4 +55,8 @@ public class ActivoDetalleRequestDto {
 	@Max(value = 65536, message = "no debe superar 65536")
 	private Integer almacenamientoGb;
 
+	private Boolean incluyeCargador;
+
+	private Boolean incluyeCableUsb;
+
 }

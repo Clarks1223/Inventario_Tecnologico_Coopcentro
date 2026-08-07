@@ -24,4 +24,9 @@ public class ActivoDetalle {
 	private String dominio;
 	private Integer almacenamientoGb;
 
+	// Accesorios que acompanan al equipo. Solo aplican a dispositivo_movil e
+	// impresora_termica, y se marcan al registrar el activo.
+	private Boolean incluyeCargador;
+	private Boolean incluyeCableUsb;
+
 }

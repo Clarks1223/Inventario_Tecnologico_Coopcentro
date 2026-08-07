@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.uisrael.inventario.dominio.excepciones.NegocioException;
 import com.uisrael.inventario.presentacion.dto.response.ErrorResponseDto;
 
 /**
@@ -27,6 +30,8 @@ import com.uisrael.inventario.presentacion.dto.response.ErrorResponseDto;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	private static final String MENSAJE_OBLIGATORIO = "es obligatorio";
 
@@ -55,9 +60,22 @@ public class GlobalExceptionHandler {
 			Map.entry("direccion", "dirección"),
 			Map.entry("cedula", "cédula"));
 
+	/** Regla de negocio incumplida: el mensaje esta redactado para el usuario. */
+	@ExceptionHandler(NegocioException.class)
+	public ResponseEntity<ErrorResponseDto> manejarNegocio(NegocioException e) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponseDto(e.getMessage()));
+	}
+
+	/**
+	 * Cualquier otra excepcion es un bug o un fallo de infraestructura (plantilla
+	 * ausente, disco, red). Se responde 500 con un texto generico para no filtrar
+	 * detalles internos al usuario, y se deja el stack trace en el log.
+	 */
 	@ExceptionHandler(RuntimeException.class)
 	public ResponseEntity<ErrorResponseDto> manejarRuntimeException(RuntimeException e) {
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponseDto(e.getMessage()));
+		log.error("Error inesperado procesando la peticion", e);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new ErrorResponseDto("Ocurrió un error inesperado. Intente de nuevo o contacte a soporte"));
 	}
 
 	@ExceptionHandler(DataIntegrityViolationException.class)

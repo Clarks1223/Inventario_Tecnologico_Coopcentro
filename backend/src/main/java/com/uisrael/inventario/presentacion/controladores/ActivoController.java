@@ -53,7 +53,7 @@ public class ActivoController {
 		activo.setCreatedAt(LocalDateTime.now());
 		activo.setUpdatedAt(LocalDateTime.now());
 		ActivoDetalle detalle = requestDto.getDetalle() == null ? null : detalleMapper.toDomain(requestDto.getDetalle());
-		Activo guardado = activoUseCase.guardar(activo, detalle);
+		Activo guardado = activoUseCase.guardar(activo, detalle, requestDto.getIdUsuarioTi());
 		return enriquecerConDetalle(mapper.toResponseDto(guardado));
 	}
 
@@ -87,7 +87,7 @@ public class ActivoController {
 		activo.setCreatedAt(existente.getCreatedAt());
 		activo.setUpdatedAt(LocalDateTime.now());
 		ActivoDetalle detalle = requestDto.getDetalle() == null ? null : detalleMapper.toDomain(requestDto.getDetalle());
-		Activo guardado = activoUseCase.guardar(activo, detalle);
+		Activo guardado = activoUseCase.guardar(activo, detalle, requestDto.getIdUsuarioTi());
 		return enriquecerConDetalle(mapper.toResponseDto(guardado));
 	}
 

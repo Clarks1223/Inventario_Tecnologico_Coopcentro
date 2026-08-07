@@ -2,9 +2,7 @@ package com.uisrael.inventario.presentacion.controladores;
 
 import java.util.List;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +18,12 @@ import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionU
 import com.uisrael.inventario.dominio.entidades.ActaEntregaRecepcion;
 import com.uisrael.inventario.presentacion.dto.request.AsignarActivoRequestDto;
 import com.uisrael.inventario.presentacion.dto.request.DevolverActivoRequestDto;
+import com.uisrael.inventario.dominio.documentos.ActasArchivadas;
+import com.uisrael.inventario.presentacion.dto.request.ArchivarLoteRequestDto;
 import com.uisrael.inventario.presentacion.dto.request.DevolverTodoEmpleadoRequestDto;
+import com.uisrael.inventario.presentacion.dto.request.ObservacionActaRequestDto;
 import com.uisrael.inventario.presentacion.dto.response.ActaEntregaRecepcionResponseDto;
+import com.uisrael.inventario.presentacion.dto.response.ActasArchivadasResponseDto;
 import com.uisrael.inventario.presentacion.mapeadores.IActaEntregaRecepcionDtoMapper;
 
 import jakarta.validation.Valid;
@@ -62,13 +64,34 @@ public class ActaEntregaRecepcionController {
 		return actaDocumentoUseCase.listarActasImprimibles(idEmpleado);
 	}
 
-	@GetMapping("/{id}/imprimir")
-	public ResponseEntity<byte[]> imprimir(@PathVariable("id") int id) {
-		byte[] pdf = actaDocumentoUseCase.generarPdf(id);
-		return ResponseEntity.ok()
-				.contentType(MediaType.APPLICATION_PDF)
-				.header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=acta-" + id + ".pdf")
-				.body(pdf);
+	private ActasArchivadasResponseDto aDto(ActasArchivadas archivadas) {
+		return new ActasArchivadasResponseDto(archivadas.rutas(), archivadas.carpeta(), archivadas.cantidad());
+	}
+
+	private String observacionDe(ObservacionActaRequestDto requestDto) {
+		return requestDto == null ? null : requestDto.getObservacion();
+	}
+
+	/**
+	 * Generan el acta y la guardan en su carpeta; devuelven la ruta, no el PDF.
+	 * Son POST porque archivan el documento y guardan el comentario del tecnico.
+	 */
+	@PostMapping("/imprimibles-empleado/{idEmpleado}/archivar")
+	public ActasArchivadasResponseDto archivarTodasDelEmpleado(@PathVariable("idEmpleado") int idEmpleado,
+			@Valid @RequestBody(required = false) ObservacionActaRequestDto requestDto) {
+		return aDto(actaDocumentoUseCase.archivarActasDelEmpleado(idEmpleado, observacionDe(requestDto)));
+	}
+
+	@PostMapping("/{id}/archivar")
+	public ActasArchivadasResponseDto archivar(@PathVariable("id") int id,
+			@Valid @RequestBody(required = false) ObservacionActaRequestDto requestDto) {
+		return aDto(actaDocumentoUseCase.archivarActa(id, observacionDe(requestDto)));
+	}
+
+	/** Archiva un lote de actas ya cerradas; lo usa la devolucion masiva. */
+	@PostMapping("/archivar-lote")
+	public ActasArchivadasResponseDto archivarLote(@Valid @RequestBody ArchivarLoteRequestDto requestDto) {
+		return aDto(actaDocumentoUseCase.archivarLote(requestDto.getIdsActas()));
 	}
 
 	@PostMapping("/asignar")
@@ -81,14 +104,17 @@ public class ActaEntregaRecepcionController {
 
 	@PostMapping("/{id}/devolver")
 	public ActaEntregaRecepcionResponseDto devolver(@PathVariable("id") int id, @Valid @RequestBody DevolverActivoRequestDto requestDto) {
-		ActaEntregaRecepcion acta = actaUseCase.devolver(id, requestDto.getMotivo());
+		ActaEntregaRecepcion acta = actaUseCase.devolver(id, requestDto.getMotivo(), requestDto.getIdUsuarioTi(),
+				requestDto.getObservacion());
 		return mapper.toResponseDto(acta);
 	}
 
 	@PostMapping("/devolver-todo-empleado")
 	public List<ActaEntregaRecepcionResponseDto> devolverTodoEmpleado(@Valid @RequestBody DevolverTodoEmpleadoRequestDto requestDto) {
-		return actaUseCase.devolverTodoEmpleado(requestDto.getIdEmpleado(), requestDto.getMotivo()).stream()
-				.map(mapper::toResponseDto).toList();
+		return actaUseCase
+				.devolverTodoEmpleado(requestDto.getIdEmpleado(), requestDto.getMotivo(), requestDto.getIdUsuarioTi(),
+						requestDto.getObservacion())
+				.stream().map(mapper::toResponseDto).toList();
 	}
 
 }

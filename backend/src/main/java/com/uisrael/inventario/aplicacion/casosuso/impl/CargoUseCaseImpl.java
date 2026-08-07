@@ -2,8 +2,11 @@ package com.uisrael.inventario.aplicacion.casosuso.impl;
 
 import java.util.List;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.uisrael.inventario.aplicacion.casosuso.entrada.ICargoUseCase;
 import com.uisrael.inventario.dominio.entidades.Cargo;
+import com.uisrael.inventario.dominio.excepciones.NegocioException;
 import com.uisrael.inventario.dominio.repositorios.ICargoRepositorio;
 
 public class CargoUseCaseImpl implements ICargoUseCase {
@@ -15,13 +18,14 @@ public class CargoUseCaseImpl implements ICargoUseCase {
 	}
 
 	@Override
+	@Transactional
 	public Cargo guardar(Cargo nuevoCargo) {
 		nuevoCargo.setNombre(nuevoCargo.getNombre().toUpperCase());
 		repositorio.buscarPorNombre(nuevoCargo.getNombre()).stream()
 				.filter(existente -> existente.getIdCargo() != nuevoCargo.getIdCargo())
 				.findFirst()
 				.ifPresent(existente -> {
-					throw new RuntimeException("Ya existe un cargo con ese nombre");
+					throw new NegocioException("Ya existe un cargo con ese nombre");
 				});
 		return repositorio.guardar(nuevoCargo);
 	}
@@ -29,7 +33,7 @@ public class CargoUseCaseImpl implements ICargoUseCase {
 	@Override
 	public Cargo buscarPorId(int idCargo) {
 		return repositorio.buscarPorId(idCargo)
-				.orElseThrow(() -> new RuntimeException("Cargo no encontrado"));
+				.orElseThrow(() -> new NegocioException("Cargo no encontrado"));
 	}
 
 	@Override
@@ -38,6 +42,7 @@ public class CargoUseCaseImpl implements ICargoUseCase {
 	}
 
 	@Override
+	@Transactional
 	public void eliminar(int idCargo) {
 		repositorio.eliminar(idCargo);
 	}

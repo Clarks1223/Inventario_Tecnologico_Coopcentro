@@ -19,5 +19,7 @@ public class ActivoDetalleResponseDto {
 	private String ip;
 	private String dominio;
 	private Integer almacenamientoGb;
+	private Boolean incluyeCargador;
+	private Boolean incluyeCableUsb;
 
 }
