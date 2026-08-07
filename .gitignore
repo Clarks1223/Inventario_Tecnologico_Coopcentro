@@ -9,11 +9,19 @@ backend/.settings
 backend/.springBeans
 backend/.sts4-cache
 
-# Coleccion de Postman (uso local, no se sube al repo)
-backend/postman/
-
 # Actas PDF generadas en runtime (contienen datos personales: nombre, cedula)
 backend/actas-generadas/
+
+# Scripts de migracion de un solo uso: se ejecutan a mano contra la BD y no
+# forman parte del codigo desplegable.
+backend/migracion-*.sql
+
+# Copias de seguridad que se dejan al editar plantillas PDF
+*.bak
+
+# NOTA: backend/plantillas/ SI se versiona. Las plantillas AcroForm de las actas
+# y las plantillas HTML de correo son necesarias para que la app funcione:
+# sin ellas la generacion de actas falla con "No se encontro la plantilla".
 
 # === Frontend (Node.js) ===
 frontend/node_modules/
@@ -21,13 +29,16 @@ frontend/dist/
 frontend/.env
 frontend/.env.local
 
-# === IDEs ===
+# === IDEs y herramientas ===
 .idea/
 *.iws
 *.iml
 *.ipr
 .vscode/
 *.swp
+
+# Ajustes locales de Claude Code (por maquina, no se comparten)
+.claude/settings.local.json
 
 # === OS ===
 .DS_Store
