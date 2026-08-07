@@ -4,6 +4,7 @@ import { empleadosService } from '../services/empleadosService';
 import { activosService } from '../services/activosService';
 import { oficinasService } from '../services/oficinasService';
 import { useSnackbar } from './useSnackbar';
+import { mensajeDeError } from '../utils/apiError';
 import axios from 'axios';
 
 export const useHistorialAsignaciones = () => {
@@ -98,17 +99,21 @@ export const useHistorialAsignaciones = () => {
     [filteredAsignaciones, page, rowsPerPage, empleadoNombre, tecnicoNombre, activoDe]
   );
 
+  // El acta no se abre en el navegador: se vuelve a archivar en su carpeta y
+  // se informa la ruta. Sin comentario, para no pisar el que ya tenga.
   const handlePrint = useCallback(async (idActa) => {
     try {
-      const response = await asignacionesService.printActa(idActa);
-      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
-      window.open(url, '_blank');
+      const { rutas = [] } = (await asignacionesService.archivarActa(idActa)).data || {};
+      showSnackbar(`Acta guardada en: ${rutas[0]}`, 'success');
     } catch (error) {
-      if (error.response?.status === 500) {
-        showSnackbar('No hay plantilla de acta disponible para este tipo de activo', 'warning');
-      } else {
-        showSnackbar('Error al generar el acta en PDF', 'error');
-      }
+      const esReglaDeNegocio = error.response?.status === 400;
+      const mensaje = await mensajeDeError(
+        error,
+        esReglaDeNegocio
+          ? 'No se puede generar el acta para este activo'
+          : 'No se pudo generar el acta. Verifique que las plantillas estén instaladas en el servidor'
+      );
+      showSnackbar(mensaje, esReglaDeNegocio ? 'warning' : 'error');
     }
   }, [showSnackbar]);
 

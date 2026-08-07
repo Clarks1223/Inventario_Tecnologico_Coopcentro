@@ -37,11 +37,14 @@ import { useAsignaciones } from '../hooks/useAsignaciones';
 import { useDialogFullScreen } from '../hooks/useDialogFullScreen';
 import { useSession } from '../hooks/useSession';
 import PageHeader from '../components/ui/PageHeader';
+import ComentarioActaDialog from '../components/ui/ComentarioActaDialog';
 import { TIPO_ACTIVO_OPTIONS } from '../constants/activosConstants';
 
 const MAX_EMPLEADOS_VISIBLES = 100;
 
-const emptyForm = { id_activo: '', motivo: '' };
+// El comentario del acta ya no se pide aquí: se pide en cada acción que genera
+// un documento (imprimir o devolver), que es donde se sabe qué acta lleva qué.
+const emptyForm = { id_activo: '' };
 
 const iniciales = (empleado) =>
   `${empleado.nombre?.[0] || ''}${empleado.apellido?.[0] || ''}`.toUpperCase();
@@ -65,14 +68,12 @@ const Asignaciones = () => {
     cargoNombre,
     open,
     setOpen,
-    confirmDialog,
     handleAssign,
-    initiateReturn,
-    initiateReturnAll,
-    handleConfirmAction,
-    handleCloseConfirm,
-    handlePrint,
-    handlePrintAllForEmpleado,
+    accionActaAbierta,
+    accionActaActual,
+    iniciarAccionActa,
+    confirmarAccionActa,
+    cancelarAccionActa,
   } = useAsignaciones();
 
   const { sesion } = useSession();
@@ -195,16 +196,16 @@ const Asignaciones = () => {
                   <Button
                     variant="outlined"
                     startIcon={<PrintIcon />}
-                    onClick={() => handlePrintAllForEmpleado(empleadoActual.id_empleado)}
+                    onClick={() => iniciarAccionActa('imprimirTodo', empleadoActual.id_empleado)}
                     disabled={asignacionesDelEmpleado.length === 0}
                   >
-                    Imprimir actas
+                    Generar actas
                   </Button>
                   <Button
                     variant="outlined"
                     color="error"
                     startIcon={<AssignmentReturnIcon />}
-                    onClick={() => initiateReturnAll(empleadoActual.id_empleado)}
+                    onClick={() => iniciarAccionActa('devolverTodo', empleadoActual.id_empleado)}
                     disabled={asignacionesDelEmpleado.length === 0}
                   >
                     Devolver todo
@@ -265,9 +266,9 @@ const Asignaciones = () => {
                             }}
                           >
                             <IconButton
-                              aria-label="Imprimir acta de entrega"
-                              title="Imprimir acta de entrega"
-                              onClick={() => handlePrint(acta.id_acta)}
+                              aria-label="Generar acta de entrega"
+                              title="Generar acta de entrega (se guarda en disco)"
+                              onClick={() => iniciarAccionActa('imprimirActa', acta.id_acta)}
                             >
                               <PrintIcon />
                             </IconButton>
@@ -275,7 +276,7 @@ const Asignaciones = () => {
                               aria-label="Registrar devolución"
                               title="Registrar devolución"
                               color="error"
-                              onClick={() => initiateReturn(acta.id_acta)}
+                              onClick={() => iniciarAccionActa('devolver', acta.id_acta)}
                             >
                               <AssignmentReturnIcon />
                             </IconButton>
@@ -364,15 +365,6 @@ const Asignaciones = () => {
               />
             )}
           />
-          <TextField
-            margin="dense"
-            label="Motivo (opcional)"
-            fullWidth
-            multiline
-            rows={2}
-            value={form.motivo}
-            onChange={(e) => setForm({ ...form, motivo: e.target.value })}
-          />
           {activoElegido && empleadoActual && (
             <Typography variant="body2" sx={{ mt: 1 }}>
               Se asignará <b>{activoElegido.serial}</b> ({activoElegido.tipo_activo}) a{' '}
@@ -395,22 +387,16 @@ const Asignaciones = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog
-        open={confirmDialog.open}
-        onClose={handleCloseConfirm}
-        aria-labelledby="asignaciones-confirm-dialog-title"
-      >
-        <DialogTitle id="asignaciones-confirm-dialog-title">Confirmación</DialogTitle>
-        <DialogContent>
-          <DialogContentText>{confirmDialog.message}</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirm}>Cancelar</Button>
-          <Button onClick={handleConfirmAction} color="error" variant="contained">
-            Aceptar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {accionActaAbierta && accionActaActual ? (
+        <ComentarioActaDialog
+          titulo={accionActaActual.titulo}
+          descripcion={accionActaActual.descripcion}
+          textoAccion={accionActaActual.textoAccion}
+          colorAccion={accionActaActual.colorAccion}
+          onCancel={cancelarAccionActa}
+          onConfirm={confirmarAccionActa}
+        />
+      ) : null}
     </Box>
   );
 };

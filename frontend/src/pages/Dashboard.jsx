@@ -2,6 +2,7 @@ import { Grid, Paper, Typography, Box } from '@mui/material';
 import { useDashboard } from '../hooks/useDashboard';
 import PageHeader from '../components/ui/PageHeader';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { etiquetaDeEstadoActivo } from '../constants/activosConstants';
 
 const Dashboard = () => {
     const { stats, loading } = useDashboard();
@@ -29,7 +30,7 @@ const Dashboard = () => {
                         <Typography variant="h6">Activos por Estado</Typography>
                         {stats.por_estado.map((item) => (
                             <Box key={item.estado} sx={{ display: 'flex', justifyContent: 'space-between', my: 1 }}>
-                                <Typography>{item.estado}</Typography>
+                                <Typography>{etiquetaDeEstadoActivo(item.estado)}</Typography>
                                 <Typography fontWeight="bold">{item.count}</Typography>
                             </Box>
                         ))}

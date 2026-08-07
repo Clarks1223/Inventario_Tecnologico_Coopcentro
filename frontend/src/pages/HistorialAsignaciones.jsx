@@ -14,6 +14,11 @@ import PrintIcon from '@mui/icons-material/Print';
 import { useHistorialAsignaciones } from '../hooks/useHistorialAsignaciones';
 import PageHeader from '../components/ui/PageHeader';
 import DataTable from '../components/ui/DataTable';
+import {
+  ESTADO_ACTA,
+  ESTADO_ACTA_CHIP,
+  ESTADO_ACTA_OPTIONS,
+} from '../constants/activosConstants';
 
 const HistorialAsignaciones = () => {
   const {
@@ -82,13 +87,13 @@ const HistorialAsignaciones = () => {
     {
       key: 'estado_asignacion',
       label: 'Estado',
-      render: (row) => (
-        <Chip
-          label={row.estado_asignacion === 'activa' ? 'Activa' : 'Devuelta'}
-          color={row.estado_asignacion === 'activa' ? 'success' : 'default'}
-          size="small"
-        />
-      ),
+      render: (row) => {
+        const chip = ESTADO_ACTA_CHIP[row.estado_asignacion] || {
+          label: row.estado_asignacion,
+          color: 'default',
+        };
+        return <Chip label={chip.label} color={chip.color} size="small" />;
+      },
     },
   ];
 
@@ -137,8 +142,11 @@ const HistorialAsignaciones = () => {
             <MenuItem value="">
               <em>Todas</em>
             </MenuItem>
-            <MenuItem value="activa">Activa</MenuItem>
-            <MenuItem value="devuelta">Devuelta</MenuItem>
+            {ESTADO_ACTA_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Box>
@@ -152,15 +160,23 @@ const HistorialAsignaciones = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={(newPage) => setPage(newPage)}
         keyExtractor={(row) => row.id_acta}
-        renderActions={(row) => (
-          <IconButton
-            aria-label="Imprimir acta"
-            title={row.estado_asignacion === 'activa' ? 'Imprimir acta de entrega' : 'Imprimir acta de devolución'}
-            onClick={() => handlePrint(row.id_acta)}
-          >
-            <PrintIcon />
-          </IconButton>
-        )}
+        renderActions={(row) =>
+          // Las actas de custodia son un registro interno de bodega: nadie las
+          // firma y no tienen documento asociado.
+          row.estado_asignacion === ESTADO_ACTA.CUSTODIA ? null : (
+            <IconButton
+              aria-label="Imprimir acta"
+              title={
+                row.estado_asignacion === ESTADO_ACTA.ACTIVA
+                  ? 'Imprimir acta de entrega'
+                  : 'Imprimir acta de devolución'
+              }
+              onClick={() => handlePrint(row.id_acta)}
+            >
+              <PrintIcon />
+            </IconButton>
+          )
+        }
         emptyMessage="No existen asignaciones registradas."
       />
     </Box>

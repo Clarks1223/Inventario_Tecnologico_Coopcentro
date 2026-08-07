@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { activosService } from '../services/activosService';
 import { useSnackbar } from './useSnackbar';
+import { useSession } from './useSession';
+import { ESTADO_ACTIVO } from '../constants/activosConstants';
 
 const emptyBaseData = {
   codigo_inventario: '',
@@ -8,7 +10,7 @@ const emptyBaseData = {
   marca: '',
   modelo: '',
   serial: '',
-  estado: 'NO_ASIGNADO',
+  estado: ESTADO_ACTIVO.OPERATIVO,
   id_oficina: '',
   observaciones: '',
 };
@@ -23,6 +25,7 @@ export const useActivoEditor = (onSaveSuccess) => {
   const [editId, setEditId] = useState(null);
 
   const showSnackbar = useSnackbar();
+  const { sesion } = useSession();
 
   const resetForm = useCallback(() => {
     setBaseData(emptyBaseData);
@@ -33,7 +36,9 @@ export const useActivoEditor = (onSaveSuccess) => {
   }, []);
 
   const handleSave = useCallback(async () => {
-    const payload = { ...baseData, tipo_activo: tipo };
+    // El activo queda a cargo de quien lo registra, para que no exista ningún
+    // momento en el que nadie responda por él.
+    const payload = { ...baseData, tipo_activo: tipo, id_usuario_ti: sesion?.id_usuario_ti };
     payload.detalle = { ...detailData, id_activo: editId || 0 };
 
     try {
@@ -69,7 +74,7 @@ export const useActivoEditor = (onSaveSuccess) => {
 
       showSnackbar(errorMessage, 'error');
     }
-  }, [baseData, tipo, detailData, isEditing, editId, onSaveSuccess, resetForm, showSnackbar]);
+  }, [baseData, tipo, detailData, isEditing, editId, onSaveSuccess, resetForm, showSnackbar, sesion]);
 
   const handleEdit = useCallback(async (row) => {
     setIsEditing(true);

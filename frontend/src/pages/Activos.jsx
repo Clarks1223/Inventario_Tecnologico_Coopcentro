@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import {
   Box,
   Typography,
@@ -39,7 +40,33 @@ import PageToolbar from '../components/ui/PageToolbar';
 import {
   TIPO_ACTIVO_OPTIONS,
   ESTADO_OPTIONS,
+  ESTADO_ACTIVO,
+  CUSTODIA_FILTRO_OPTIONS,
+  chipDeEstadoActivo,
+  etiquetaDeCustodia,
 } from '../constants/activosConstants';
+
+const EstadoActivoChip = ({ estado }) => {
+  const { label, color } = chipDeEstadoActivo(estado);
+  return <Chip label={label} color={color} size="small" />;
+};
+
+EstadoActivoChip.propTypes = {
+  estado: PropTypes.string,
+};
+
+/** Aviso para las acciones que, además, cierran el acta de entrega vigente. */
+const AvisoEntregaVigente = ({ activo }) =>
+  activo && !activo.en_bodega && activo.empleado_asignado ? (
+    <DialogContentText sx={{ mt: 2 }} color="warning.main">
+      Ahora mismo está entregado a <strong>{activo.empleado_asignado}</strong>. Al
+      continuar se cerrará automáticamente su acta de entrega.
+    </DialogContentText>
+  ) : null;
+
+AvisoEntregaVigente.propTypes = {
+  activo: PropTypes.object,
+};
 
 const Activos = () => {
   const [decommissionDialogOpen, setDecommissionDialogOpen] = useState(false);
@@ -191,7 +218,25 @@ const Activos = () => {
                 </FormControl>
               </TableCell>
               <TableCell sx={{ width: '13%' }}>
-                <Typography variant="subtitle2">Empleado Asignado</Typography>
+                <Typography variant="subtitle2">Custodio Actual</Typography>
+                <FormControl variant="standard" size="small" fullWidth>
+                  <Select
+                    displayEmpty
+                    value={filters.custodia}
+                    onChange={(e) =>
+                      setFilters({ ...filters, custodia: e.target.value })
+                    }
+                  >
+                    <MenuItem value="">
+                      <em>Todos</em>
+                    </MenuItem>
+                    {CUSTODIA_FILTRO_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </TableCell>
               <TableCell sx={{ width: '9%' }}>
                 <Typography variant="subtitle2">IP</Typography>
@@ -286,7 +331,7 @@ const Activos = () => {
                     </Tooltip>
                   </TableCell>
                   <TableCell>
-                    <Chip label={row.estado} size="small" />
+                    <EstadoActivoChip estado={row.estado} />
                   </TableCell>
                   <TableCell
                     sx={{
@@ -306,8 +351,25 @@ const Activos = () => {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    <Tooltip title={row.empleado_asignado || ''}>
-                      <span>{row.empleado_asignado || '-'}</span>
+                    <Tooltip
+                      title={
+                        row.empleado_asignado
+                          ? `${row.empleado_asignado} — ${etiquetaDeCustodia(row)}`
+                          : 'Sin acta abierta'
+                      }
+                    >
+                      <span>
+                        {row.empleado_asignado || '-'}
+                        {row.en_bodega ? (
+                          <Chip
+                            label="bodega"
+                            size="small"
+                            color="info"
+                            variant="outlined"
+                            sx={{ ml: 0.5, height: 18, fontSize: '0.65rem' }}
+                          />
+                        ) : null}
+                      </span>
                     </Tooltip>
                   </TableCell>
                   <TableCell>
@@ -346,7 +408,7 @@ const Activos = () => {
                     >
                       <EditIcon />
                     </IconButton>
-                    {row.estado !== 'DADO_DE_BAJA' ? (
+                    {row.estado !== ESTADO_ACTIVO.DADO_DE_BAJA ? (
                       <IconButton
                         aria-label="Dar de baja activo"
                         size="small"
@@ -360,8 +422,8 @@ const Activos = () => {
                         <BlockIcon />
                       </IconButton>
                     ) : null}
-                    {row.estado !== 'DADO_DE_BAJA' &&
-                    row.estado !== 'ROBADO_PERDIDO' ? (
+                    {row.estado !== ESTADO_ACTIVO.DADO_DE_BAJA &&
+                    row.estado !== ESTADO_ACTIVO.ROBADO_PERDIDO ? (
                       <IconButton
                         aria-label="Reportar activo robado o perdido"
                         size="small"
@@ -414,6 +476,7 @@ const Activos = () => {
             <strong>{activoToDecommission?.codigo_inventario}</strong>? Esta
             acción cambiará su estado a "Dado de baja".
           </DialogContentText>
+          <AvisoEntregaVigente activo={activoToDecommission} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDecommissionDialogOpen(false)}>
@@ -448,6 +511,7 @@ const Activos = () => {
             <strong>{activoToReportStolen?.serial}</strong> como robado o
             perdido? Esta acción cambiará su estado a "Robado/Perdido".
           </DialogContentText>
+          <AvisoEntregaVigente activo={activoToReportStolen} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStolenDialogOpen(false)}>Cancelar</Button>

@@ -16,6 +16,10 @@ import DispositivoMovilFields from './DispositivoMovilFields';
 import ImpresoraFields from './ImpresoraFields';
 import PerifericoFields from './PerifericoFields';
 
+// Lo que cabe en la celda de observación más angosta del acta impresa
+// (147 pt a 7.5 pt de fuente). Debe coincidir con el @Size del backend.
+const MAX_OBSERVACIONES = 40;
+
 const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = [] }) {
   const {
     open,
@@ -132,6 +136,20 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 }
                 disabled={isEditing}
                 helperText="Sugerencia: OFICINA-AREA-TIPO-NUMERACIÓN (ej. MAT-SIS-MOUSE-001). Debe ser único."
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Observaciones"
+                fullWidth
+                value={baseData.observaciones || ''}
+                onChange={(e) =>
+                  setBaseData({ ...baseData, observaciones: e.target.value })
+                }
+                slotProps={{ htmlInput: { maxLength: MAX_OBSERVACIONES } }}
+                error={(baseData.observaciones || '').length > MAX_OBSERVACIONES}
+                helperText={`Se imprime en el acta. ${(baseData.observaciones || '').length}/${MAX_OBSERVACIONES} caracteres.`}
               />
             </Grid>
 
