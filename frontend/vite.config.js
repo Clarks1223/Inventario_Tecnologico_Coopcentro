@@ -10,6 +10,17 @@ const __dirname = path.dirname(__filename)
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
+  // El navegador pide siempre /api al mismo host que sirve la pagina (ver VITE_API_URL)
+  // y es Vite quien reenvia al backend. Asi la app funciona igual desde localhost que
+  // desde otro PC de la red local, sin hardcodear la IP ni depender de CORS.
+  const backendProxy = {
+    '/api': {
+      target: env.VITE_BACKEND_URL || 'http://localhost:8080',
+      changeOrigin: true,
+      secure: false,
+    },
+  }
+
   return {
     plugins: [
       react(),
@@ -26,18 +37,21 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      // 0.0.0.0: escucha en todas las interfaces para que la app sea accesible
+      // desde otros equipos de la red local, no solo desde este PC.
+      host: '0.0.0.0',
       port: 5173,
       strictPort: false,
-      proxy: {
-        '/api': {
-          target: env.VITE_BACKEND_URL || 'http://192.168.9.42:8000',
-          changeOrigin: true,
-          secure: false,
-        },
-      },
+      proxy: backendProxy,
       hmr: {
         overlay: true,
       },
+    },
+    preview: {
+      host: '0.0.0.0',
+      port: 4173,
+      strictPort: false,
+      proxy: backendProxy,
     },
     build: {
       target: 'es2020',

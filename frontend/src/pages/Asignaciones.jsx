@@ -229,6 +229,7 @@ const Asignaciones = () => {
                       <TableRow>
                         <TableCell>Número de Serie</TableCell>
                         <TableCell>Tipo</TableCell>
+                        <TableCell>Código de Inventario</TableCell>
                         <TableCell>Fecha Asignación</TableCell>
                         <TableCell>Procesado por</TableCell>
                         <TableCell
@@ -249,6 +250,7 @@ const Asignaciones = () => {
                         <TableRow key={acta.id_acta}>
                           <TableCell>{acta.serial}</TableCell>
                           <TableCell>{acta.tipo_activo}</TableCell>
+                          <TableCell>{acta.codigo_inventario}</TableCell>
                           <TableCell>
                             {acta.fecha_asignacion
                               ? new Date(acta.fecha_asignacion).toLocaleString()

@@ -6,6 +6,11 @@ export const TIPO_ACTIVO_OPTIONS = [
   { value: 'impresora_termica', label: 'Impresora Térmica' },
 ];
 
+export const TIPO_CONEXION_IMPRESORA_OPTIONS = [
+  { value: 'bluetooth', label: 'Bluetooth' },
+  { value: 'wifi', label: 'Wifi' },
+];
+
 export const MARCAS_OPTIONS = [
   'HP', 'DELL', 'LENOVO', 'ASUS', 'ACER', 'APPLE',
   'EPSON', 'GENIUS', 'LOGITECH', 'XIAOMI', 'SAMSUNG',

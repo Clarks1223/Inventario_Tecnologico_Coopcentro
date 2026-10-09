@@ -1,15 +1,23 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
   Grid,
   TextField,
+  MenuItem,
   Typography,
   FormGroup,
   FormControlLabel,
   Checkbox,
 } from '@mui/material';
+import { TIPO_CONEXION_IMPRESORA_OPTIONS } from '../../constants/activosConstants';
 
 const ImpresoraFields = memo(function ImpresoraFields({ detailData, setDetailData }) {
+  useEffect(() => {
+    setDetailData((prev) =>
+      prev.tipo_conexion ? prev : { ...prev, tipo_conexion: 'bluetooth' }
+    );
+  }, [setDetailData]);
+
   return (
     <>
       <Grid size={{ xs: 12 }}>
@@ -17,33 +25,20 @@ const ImpresoraFields = memo(function ImpresoraFields({ detailData, setDetailDat
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
+          select
           label="Tipo de Conexión"
           fullWidth
-          value={detailData.tipo_conexion || ''}
+          value={detailData.tipo_conexion || 'bluetooth'}
           onChange={(e) =>
             setDetailData({ ...detailData, tipo_conexion: e.target.value })
           }
-        />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
-          label="Modelo de Cabezal"
-          fullWidth
-          value={detailData.modelo_cabezal || ''}
-          onChange={(e) =>
-            setDetailData({ ...detailData, modelo_cabezal: e.target.value })
-          }
-        />
-      </Grid>
-      <Grid size={{ xs: 12, sm: 6 }}>
-        <TextField
-          label="Estado de Batería"
-          fullWidth
-          value={detailData.estado_bateria || ''}
-          onChange={(e) =>
-            setDetailData({ ...detailData, estado_bateria: e.target.value })
-          }
-        />
+        >
+          {TIPO_CONEXION_IMPRESORA_OPTIONS.map((opcion) => (
+            <MenuItem key={opcion.value} value={opcion.value}>
+              {opcion.label}
+            </MenuItem>
+          ))}
+        </TextField>
       </Grid>
       <Grid size={{ xs: 12 }}>
         <Typography variant="subtitle2" color="text.secondary">

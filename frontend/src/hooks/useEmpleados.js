@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { empleadosService } from '../services/empleadosService';
 import { usuariosTiService } from '../services/usuariosTiService';
 import { useSnackbar } from './useSnackbar';
+import { formatearNombrePropio } from '../utils/nombrePropio';
 import axios from 'axios';
 
 const emptyEmpleado = {
@@ -15,6 +16,12 @@ const emptyEmpleado = {
   id_oficina: '',
   rol: 'usuario',
 };
+
+const normalizarNombres = (empleado) => ({
+  ...empleado,
+  nombre: formatearNombrePropio(empleado.nombre),
+  apellido: formatearNombrePropio(empleado.apellido),
+});
 
 export const useEmpleados = () => {
   const [allEmpleados, setAllEmpleados] = useState([]);
@@ -117,11 +124,13 @@ export const useEmpleados = () => {
 
   const handleSave = useCallback(async () => {
     try {
-      let idEmpleado = currentEmpleado.id_empleado;
+      const empleadoNormalizado = normalizarNombres(currentEmpleado);
+      setCurrentEmpleado(empleadoNormalizado);
+      let idEmpleado = empleadoNormalizado.id_empleado;
       if (isEdit) {
-        await empleadosService.updateEmpleado(idEmpleado, currentEmpleado);
+        await empleadosService.updateEmpleado(idEmpleado, empleadoNormalizado);
       } else {
-        const creado = await empleadosService.createEmpleado({ ...currentEmpleado, activo: true });
+        const creado = await empleadosService.createEmpleado({ ...empleadoNormalizado, activo: true });
         idEmpleado = creado.data.id_empleado;
       }
 
@@ -161,7 +170,7 @@ export const useEmpleados = () => {
     try {
       const empleado = allEmpleados.find((e) => e.id_empleado === id);
       if (!empleado) return;
-      await empleadosService.updateEmpleado(id, { ...empleado, activo });
+      await empleadosService.updateEmpleado(id, { ...normalizarNombres(empleado), activo });
       showSnackbar(activo ? 'Empleado reactivado correctamente' : 'Empleado desactivado correctamente', 'success');
       fetchEmpleados();
     } catch (error) {

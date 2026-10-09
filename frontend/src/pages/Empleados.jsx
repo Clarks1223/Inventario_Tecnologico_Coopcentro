@@ -34,6 +34,7 @@ import { useDialogFullScreen } from '../hooks/useDialogFullScreen';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import PageHeader from '../components/ui/PageHeader';
 import PageToolbar from '../components/ui/PageToolbar';
+import { formatearNombrePropio } from '../utils/nombrePropio';
 
 const Empleados = () => {
   const {
@@ -310,6 +311,12 @@ const Empleados = () => {
             onChange={(e) =>
               setCurrentEmpleado({ ...currentEmpleado, nombre: e.target.value })
             }
+            onBlur={(e) =>
+              setCurrentEmpleado({
+                ...currentEmpleado,
+                nombre: formatearNombrePropio(e.target.value),
+              })
+            }
           />
           <TextField
             margin="dense"
@@ -320,6 +327,12 @@ const Empleados = () => {
               setCurrentEmpleado({
                 ...currentEmpleado,
                 apellido: e.target.value,
+              })
+            }
+            onBlur={(e) =>
+              setCurrentEmpleado({
+                ...currentEmpleado,
+                apellido: formatearNombrePropio(e.target.value),
               })
             }
           />

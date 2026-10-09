@@ -1,43 +1,52 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { dashboardService } from '../services/dashboardService';
+import { oficinasService } from '../services/oficinasService';
+import { empleadosService } from '../services/empleadosService';
+import { asignacionesService } from '../services/asignacionesService';
+import { enriquecerActivos, calcularResumen } from '../utils/dashboardStats';
 
-const groupByCount = (activos, key) => {
-  const counts = activos.reduce((acc, activo) => {
-    const value = activo[key] || 'Sin especificar';
-    acc[value] = (acc[value] || 0) + 1;
-    return acc;
-  }, {});
-  return Object.entries(counts).map(([value, count]) => ({ [key]: value, count }));
-};
+export const useDashboard = (incluirFueraDeServicio = false) => {
+  const [datos, setDatos] = useState({ activos: [], oficinas: [], empleados: [], actas: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export const useDashboard = () => {
-    const [stats, setStats] = useState({ por_tipo: [], por_estado: [] });
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let cancelled = false;
-        const fetchStats = async () => {
-            try {
-                const response = await dashboardService.getActivos();
-                const activos = response.data || [];
-                if (!cancelled) {
-                    setStats({
-                        por_tipo: groupByCount(activos, 'tipo_activo'),
-                        por_estado: groupByCount(activos, 'estado'),
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching stats", error);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        };
-        fetchStats();
-        return () => { cancelled = true; };
-    }, []);
-
-    return {
-        stats,
-        loading,
+  useEffect(() => {
+    const controller = new AbortController();
+    const cargar = async () => {
+      try {
+        const config = { signal: controller.signal };
+        const [activos, oficinas, empleados, actas] = await Promise.all([
+          dashboardService.getActivos(config),
+          oficinasService.getOficinas(config),
+          empleadosService.getEmpleados(config),
+          asignacionesService.getAsignaciones(config),
+        ]);
+        setDatos({
+          activos: activos.data || [],
+          oficinas: oficinas.data || [],
+          empleados: empleados.data || [],
+          actas: actas.data || [],
+        });
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Error al cargar el dashboard', err);
+        setError('No se pudo cargar la información del dashboard.');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
     };
+    cargar();
+    return () => controller.abort();
+  }, []);
+
+  const activos = useMemo(
+    () => enriquecerActivos(datos.activos, datos.oficinas, datos.empleados, datos.actas),
+    [datos]
+  );
+  const resumen = useMemo(
+    () => calcularResumen(activos, datos.oficinas, incluirFueraDeServicio),
+    [activos, datos.oficinas, incluirFueraDeServicio]
+  );
+
+  return { activos, oficinas: datos.oficinas, resumen, loading, error };
 };

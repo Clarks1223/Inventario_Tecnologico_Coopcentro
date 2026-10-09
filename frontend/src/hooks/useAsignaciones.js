@@ -127,6 +127,7 @@ export const useAsignaciones = () => {
         ...a,
         serial: activoDe(a.id_activo)?.serial || '',
         tipo_activo: activoDe(a.id_activo)?.tipo_activo || '',
+        codigo_inventario: activoDe(a.id_activo)?.codigo_inventario || '',
         nombre_tecnico: tecnicoNombre(a.id_usuario_ti),
       }));
   }, [allAsignaciones, empleadoSeleccionado, activoDe, tecnicoNombre]);
