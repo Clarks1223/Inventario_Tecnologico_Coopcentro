@@ -11,6 +11,7 @@ import {
   DialogActions,
   TextField,
   Autocomplete,
+  Checkbox,
   Typography,
   Chip,
   Avatar,
@@ -44,7 +45,7 @@ const MAX_EMPLEADOS_VISIBLES = 100;
 
 // El comentario del acta ya no se pide aquí: se pide en cada acción que genera
 // un documento (imprimir o devolver), que es donde se sabe qué acta lleva qué.
-const emptyForm = { id_activo: '' };
+const emptyForm = { ids_activos: [] };
 
 const iniciales = (empleado) =>
   `${empleado.nombre?.[0] || ''}${empleado.apellido?.[0] || ''}`.toUpperCase();
@@ -88,8 +89,20 @@ const Asignaciones = () => {
     ? activosDisponibles.filter((a) => a.tipo_activo === tipoActivoDialogo)
     : activosDisponibles;
 
-  const activoElegido =
-    activosDisponibles.find((a) => a.id_activo === form.id_activo) || null;
+  const activosElegidos = activosDisponibles.filter((a) =>
+    form.ids_activos.includes(a.id_activo)
+  );
+
+  // Busca en todos los campos visibles, no solo en el serial.
+  const filtrarActivos = (options, { inputValue }) => {
+    const texto = inputValue.trim().toLowerCase();
+    if (!texto) return options;
+    return options.filter((a) =>
+      [a.serial, a.codigo_inventario, a.marca, a.modelo, a.tipo_activo]
+        .filter(Boolean)
+        .some((campo) => String(campo).toLowerCase().includes(texto))
+    );
+  };
 
   const openDialog = () => {
     setForm(emptyForm);
@@ -335,7 +348,7 @@ const Asignaciones = () => {
               label="Tipo de activo"
               onChange={(e) => {
                 setTipoActivoDialogo(e.target.value);
-                setForm({ ...form, id_activo: '' });
+                setForm({ ...form, ids_activos: [] });
               }}
             >
               <MenuItem value="">
@@ -349,27 +362,54 @@ const Asignaciones = () => {
             </Select>
           </FormControl>
           <Autocomplete
+            multiple
+            disableCloseOnSelect
             options={activosParaAsignar}
-            getOptionLabel={(option) =>
-              `${option.serial} · ${option.tipo_activo} · ${option.marca || ''} ${option.modelo || ''} (${option.codigo_inventario})`
-            }
+            value={activosElegidos}
+            getOptionLabel={(option) => option.serial || ''}
             isOptionEqualToValue={(option, value) => option.id_activo === value.id_activo}
-            value={activoElegido}
+            filterOptions={filtrarActivos}
             onChange={(event, newValue) =>
-              setForm({ ...form, id_activo: newValue ? newValue.id_activo : '' })
+              setForm({ ...form, ids_activos: newValue.map((a) => a.id_activo) })
+            }
+            noOptionsText="Ningún activo disponible coincide"
+            renderOption={(props, option, { selected }) => {
+              const { key, ...otros } = props;
+              return (
+                <li key={key} {...otros}>
+                  <Checkbox size="small" checked={selected} sx={{ mr: 1 }} />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" noWrap>
+                      {option.serial} · {option.tipo_activo}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap component="div">
+                      {[option.marca, option.modelo].filter(Boolean).join(' ')}
+                      {option.codigo_inventario ? ` · ${option.codigo_inventario}` : ''}
+                    </Typography>
+                  </Box>
+                </li>
+              );
+            }}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => {
+                const { key, ...otros } = getTagProps({ index });
+                return <Chip key={key} size="small" label={option.serial} {...otros} />;
+              })
             }
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Activo disponible (busca por serial)"
+                label="Activos disponibles"
+                placeholder="Escribe el serial, código, marca o modelo"
                 margin="dense"
                 fullWidth
               />
             )}
           />
-          {activoElegido && empleadoActual && (
+          {activosElegidos.length > 0 && empleadoActual && (
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Se asignará <b>{activoElegido.serial}</b> ({activoElegido.tipo_activo}) a{' '}
+              Se asignarán <b>{activosElegidos.length}</b>{' '}
+              {activosElegidos.length === 1 ? 'activo' : 'activos'} a{' '}
               <b>
                 {empleadoActual.nombre} {empleadoActual.apellido}
               </b>
@@ -382,9 +422,9 @@ const Asignaciones = () => {
           <Button
             onClick={() => handleAssign(form)}
             variant="contained"
-            disabled={!form.id_activo}
+            disabled={form.ids_activos.length === 0}
           >
-            Asignar
+            Asignar{form.ids_activos.length > 1 ? ` (${form.ids_activos.length})` : ''}
           </Button>
         </DialogActions>
       </Dialog>

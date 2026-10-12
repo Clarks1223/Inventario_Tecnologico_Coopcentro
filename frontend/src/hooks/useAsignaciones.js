@@ -224,21 +224,41 @@ export const useAsignaciones = () => {
     }
   }, [fetchAll, showSnackbar, archivarYAvisar, sesion]);
 
-  const handleAssign = useCallback(async ({ id_activo, motivo }) => {
-    try {
-      await asignacionesService.assignActivo({
-        id_activo,
-        id_empleado: empleadoSeleccionado,
-        id_usuario_ti: sesion.id_usuario_ti,
-        motivo,
-      });
-      showSnackbar('Activo asignado correctamente', 'success');
+  // Asigna varios activos al empleado. Cada uno es su propia acta, así que se
+  // piden en secuencia y se informa cuántos pasaron y cuáles fallaron.
+  const handleAssign = useCallback(async ({ ids_activos, motivo }) => {
+    const fallidos = [];
+    let asignados = 0;
+    for (const id_activo of ids_activos) {
+      try {
+        await asignacionesService.assignActivo({
+          id_activo,
+          id_empleado: empleadoSeleccionado,
+          id_usuario_ti: sesion.id_usuario_ti,
+          motivo,
+        });
+        asignados += 1;
+      } catch (error) {
+        const serial = activoDe(id_activo)?.serial || id_activo;
+        fallidos.push(`${serial}: ${error.response?.data?.message || 'error al asignar'}`);
+      }
+    }
+    if (fallidos.length === 0) {
+      showSnackbar(
+        asignados === 1 ? 'Activo asignado correctamente' : `${asignados} activos asignados correctamente`,
+        'success'
+      );
+    } else {
+      showSnackbar(
+        `${asignados} asignado(s). No se pudo asignar: ${fallidos.join('; ')}`,
+        asignados > 0 ? 'warning' : 'error'
+      );
+    }
+    if (asignados > 0) {
       setOpen(false);
       fetchAll();
-    } catch (error) {
-      showSnackbar(error.response?.data?.message || 'Error al asignar el activo', 'error');
     }
-  }, [empleadoSeleccionado, sesion, fetchAll, showSnackbar]);
+  }, [empleadoSeleccionado, sesion, fetchAll, showSnackbar, activoDe]);
 
   /**
    * Archiva todas las actas vigentes del empleado, agrupadas entre sí (la PC
