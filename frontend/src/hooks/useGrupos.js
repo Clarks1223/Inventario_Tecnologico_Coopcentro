@@ -80,29 +80,39 @@ export const useGrupos = () => {
    * Guarda nombre/descripción y luego sincroniza los miembros: agrega los
    * nuevos en una sola llamada (todo o nada en el backend) y quita los que
    * se sacaron de la lista.
+   *
+   * Son varias peticiones, así que puede fallar a medias. Por eso se va
+   * anotando lo que el servidor ya confirmó (id del grupo y miembros actuales):
+   * si el técnico corrige y vuelve a guardar, se continúa desde ahí en vez de
+   * crear el grupo de nuevo o repetir bajas ya hechas.
    */
   const handleSave = useCallback(async () => {
     setIsSaving(true);
+    const esNuevo = !currentGrupo.id_grupo;
+    let idGrupo = currentGrupo.id_grupo;
+    let idsEnServidor = currentGrupo.ids_originales || [];
     try {
       const datos = { nombre: currentGrupo.nombre, descripcion: currentGrupo.descripcion };
-      const { data: guardado } = currentGrupo.id_grupo
-        ? await gruposService.updateGrupo(currentGrupo.id_grupo, datos)
+      const { data: guardado } = idGrupo
+        ? await gruposService.updateGrupo(idGrupo, datos)
         : await gruposService.createGrupo(datos);
+      idGrupo = guardado.id_grupo;
 
-      const originales = currentGrupo.ids_originales || [];
-      const nuevos = currentGrupo.ids_activos.filter((id) => !originales.includes(id));
-      const quitados = originales.filter((id) => !currentGrupo.ids_activos.includes(id));
+      const nuevos = currentGrupo.ids_activos.filter((id) => !idsEnServidor.includes(id));
+      const quitados = idsEnServidor.filter((id) => !currentGrupo.ids_activos.includes(id));
+      const idsDe = (grupo) => (grupo?.activos || []).map((a) => a.id_activo);
 
       if (nuevos.length > 0) {
-        await gruposService.agregarActivos(guardado.id_grupo, nuevos);
+        idsEnServidor = idsDe((await gruposService.agregarActivos(idGrupo, nuevos)).data);
       }
       for (const idActivo of quitados) {
-        await gruposService.quitarActivo(guardado.id_grupo, idActivo);
+        idsEnServidor = idsDe((await gruposService.quitarActivo(idGrupo, idActivo)).data);
       }
 
-      showSnackbar(currentGrupo.id_grupo ? 'Grupo actualizado correctamente' : 'Grupo creado correctamente', 'success');
+      showSnackbar(esNuevo ? 'Grupo creado correctamente' : 'Grupo actualizado correctamente', 'success');
       setOpen(false);
     } catch (error) {
+      setCurrentGrupo((previo) => ({ ...previo, id_grupo: idGrupo, ids_originales: idsEnServidor }));
       showSnackbar(error.response?.data?.message || 'Error al guardar el grupo', 'error');
     } finally {
       setIsSaving(false);

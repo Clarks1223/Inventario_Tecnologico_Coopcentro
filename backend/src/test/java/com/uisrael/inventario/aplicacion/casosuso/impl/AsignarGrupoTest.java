@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -108,8 +108,22 @@ class AsignarGrupoTest {
 		});
 		assertEquals(3, actas.stream().filter(a -> EstadoActa.DEVUELTA.equals(a.getEstadoAsignacion())).count());
 		assertEquals(0, actas.stream().filter(a -> EstadoActa.CUSTODIA.equals(a.getEstadoAsignacion())).count());
-		verify(actaDocumentoUseCase, times(1)).archivarLote(argThat(ids -> ids.size() == 3));
-		verify(actaDocumentoUseCase, never()).archivarActa(anyInt(), any());
+	}
+
+	/**
+	 * archivarLote/archivarActa son @Transactional en un bean con proxy: si
+	 * fallaran dentro de esta transaccion la marcarian rollback-only y toda la
+	 * asignacion se revertiria. Por eso el PDF del grupo se archiva despues, en
+	 * su propia peticion (POST /actas/archivar-lote).
+	 */
+	@Test
+	void noGeneraPdfDentroDeLaTransaccion() {
+		enBodega(10, "SN-10");
+		enBodega(11, "SN-11");
+
+		useCase.asignarGrupo(ID_GRUPO, ID_EMPLEADO, ID_USUARIO_TI, null, null);
+
+		verifyNoInteractions(actaDocumentoUseCase);
 	}
 
 	@Test
@@ -198,19 +212,6 @@ class AsignarGrupoTest {
 
 		assertEquals("El empleado no esta activo", e.getMessage());
 		verify(actaRepositorio, never()).guardar(any());
-	}
-
-	@Test
-	void fallaDelPdfNoRevierte() {
-		enBodega(10, "SN-10");
-		enBodega(11, "SN-11");
-		enBodega(12, "SN-12");
-		when(actaDocumentoUseCase.archivarLote(any())).thenThrow(new RuntimeException("sin plantilla"));
-
-		List<ActaEntregaRecepcion> entregadas = useCase.asignarGrupo(ID_GRUPO, ID_EMPLEADO, ID_USUARIO_TI, null,
-				null);
-
-		assertEquals(3, entregadas.size());
 	}
 
 	@Test

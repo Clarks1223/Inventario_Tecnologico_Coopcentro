@@ -82,7 +82,8 @@ Sigue la arquitectura hexagonal actual (dominio / aplicación / infraestructura 
   `idEmpleadoAsignado` (Integer), `nombreEmpleadoAsignado` — lo que devuelve el
   caso de uso para listar/consultar.
 - `dominio/repositorios/IGrupoActivosRepositorio.java`: `guardar`, `buscarPorId`,
-  `listarTodos`, `eliminar`, `existePorNombre(nombre, idExcluir)`.
+  `listarTodos`, `eliminar` (la unicidad del nombre se valida en el caso de uso
+  recorriendo `listarTodos()`; la columna además es `unique`).
 - `IActivoRepositorio`: añadir `listarPorGrupo(int idGrupo)`.
 
 ### Infraestructura
@@ -120,8 +121,11 @@ En `IActaEntregaRecepcionUseCase` / `ActaEntregaRecepcionUseCaseImpl`:
      SERIAL2 (dado de baja)").
   4. Para cada miembro: cierra custodia y abre entrega (con `observacion` si viene),
      sin emitir PDF individual.
-  5. Emite el paquete con `generarPdfsDelPaqueteSinFallar(idsActas)`
-     (reutiliza `archivarLote`, que agrupa la PC con sus periféricos).
+  5. **No** emite el PDF dentro de la transacción: `archivarLote` es
+     `@Transactional` y un fallo suyo dejaría la transacción rollback-only,
+     revirtiendo toda la asignación. Quien llama archiva el paquete después con
+     `POST /api/actas/archivar-lote` (el frontend lo hace), que agrupa la PC con
+     sus periféricos.
   6. Todo en una transacción (`@Transactional`): o se asigna todo o nada.
 - Refactor: extraer la lógica actual de `asignar` a un método privado
   `asignar(..., boolean emitirActa)`, igual que ya hace `devolver`. El `asignar`
@@ -172,8 +176,8 @@ Los errores de negocio siguen saliendo por `GlobalExceptionHandler`: `NegocioExc
   - Diálogo crear/editar: nombre, descripción y miembros. Los miembros se agregan
     buscando por serial (mismo patrón que la asignación múltiple de `Asignaciones.jsx`);
     solo se ofrecen activos operativos sin grupo.
-  - Acción "Asignar" visible cuando el estado es `EN_BODEGA`: elige empleado activo,
-    motivo y observación opcionales.
+  - La asignación del grupo se hace **solo desde Asignaciones** (modo "Por grupo"),
+    donde ya está elegido el empleado; la página Grupos administra los grupos.
 - `pages/Asignaciones.jsx` — **nueva opción "Por grupo"** en el diálogo
   "Nueva Asignación" del empleado seleccionado:
   - Selector de modo arriba del diálogo: **Por activos** (comportamiento actual)
@@ -195,7 +199,9 @@ Los errores de negocio siguen saliendo por `GlobalExceptionHandler`: `NegocioExc
 - Nombre de grupo duplicado → error de negocio "Ya existe un grupo con ese nombre".
 - Agregar un activo que ya está en otro grupo → error indicando el grupo actual.
 - Asignar grupo vacío o con miembros no disponibles → error con la lista de seriales y el motivo de cada uno; no se modifica nada.
-- Fallo en la generación del PDF → no revierte la asignación (mismo criterio que hoy: `generarPdfsDelPaqueteSinFallar`).
+- Fallo en la generación del PDF → no revierte la asignación: el PDF se archiva en
+  una petición aparte, después de que la asignación ya quedó guardada; el
+  frontend muestra el aviso de plantilla o regla de negocio como hoy.
 
 ## Pruebas
 

@@ -202,13 +202,14 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 
 		String motivoGrupo = "Asignacion del grupo " + grupo.getNombre()
 				+ (motivo == null || motivo.isBlank() ? "" : ": " + motivo);
-		List<ActaEntregaRecepcion> entregadas = custodias.stream()
+		// El PDF NO se emite aqui: archivarLote es @Transactional y, si fallara
+		// dentro de esta transaccion (plantilla faltante, disco), la dejaria
+		// rollback-only y se perderia toda la asignacion. Quien llama archiva el
+		// paquete despues con POST /actas/archivar-lote, en su propia transaccion,
+		// y asi la PC lleva embebidos sus perifericos en un solo paquete.
+		return custodias.stream()
 				.map(custodia -> entregar(custodia, empleado, idUsuarioTi, motivoGrupo, observacion, false))
 				.toList();
-
-		// Un solo paquete: la PC lleva embebidos sus perifericos en su acta.
-		generarPdfsDelPaqueteSinFallar(entregadas.stream().map(ActaEntregaRecepcion::getIdActa).toList());
-		return entregadas;
 	}
 
 	private String nombreDe(int idEmpleado) {
