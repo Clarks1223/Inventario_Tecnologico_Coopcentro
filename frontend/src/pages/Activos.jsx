@@ -219,6 +219,15 @@ const Activos = () => {
               </TableCell>
               <TableCell sx={{ width: '13%' }}>
                 <Typography variant="subtitle2">Custodio Actual</Typography>
+                <TextField
+                  size="small"
+                  variant="standard"
+                  placeholder="Filtrar..."
+                  value={filters.custodio}
+                  onChange={(e) =>
+                    setFilters({ ...filters, custodio: e.target.value })
+                  }
+                />
                 <FormControl variant="standard" size="small" fullWidth>
                   <Select
                     displayEmpty

@@ -31,6 +31,7 @@ export const useActivos = () => {
     serial: '',
     estado: '',
     custodia: '',
+    custodio: '',
     id_oficina: '',
     ip: '',
     dominio: '',
@@ -134,6 +135,7 @@ export const useActivos = () => {
   const filteredActivos = useMemo(() => {
     return activosConCustodio
       .filter(coincideCustodia)
+      .filter((a) => !filters.custodio || a.empleado_asignado?.toLowerCase().includes(filters.custodio.toLowerCase()))
       .filter((a) => !filters.tipo_activo || a.tipo_activo === filters.tipo_activo)
       .filter((a) => !filters.marca || a.marca?.toLowerCase().includes(filters.marca.toLowerCase()))
       .filter((a) => !filters.modelo || a.modelo?.toLowerCase().includes(filters.modelo.toLowerCase()))
