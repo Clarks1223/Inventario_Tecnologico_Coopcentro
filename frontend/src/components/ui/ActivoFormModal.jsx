@@ -143,7 +143,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
 
             <Grid size={{ xs: 12 }}>
               <TextField
-                label="Observaciones"
+                label="Observaciones en el acta"
                 fullWidth
                 value={baseData.observaciones || ''}
                 onChange={(e) =>
