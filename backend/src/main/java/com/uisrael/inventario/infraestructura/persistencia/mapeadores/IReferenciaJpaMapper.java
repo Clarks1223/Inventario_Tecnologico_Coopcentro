@@ -5,6 +5,7 @@ import org.mapstruct.Mapper;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.ActivoEntity;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.CargoEntity;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.EmpleadoEntity;
+import com.uisrael.inventario.infraestructura.persistencia.jpa.GrupoActivosEntity;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.OficinaEntity;
 import com.uisrael.inventario.infraestructura.persistencia.jpa.UsuarioTiEntity;
 
@@ -31,6 +32,16 @@ public interface IReferenciaJpaMapper {
 	default EmpleadoEntity mapEmpleado(int idEmpleado) {
 		EmpleadoEntity entity = new EmpleadoEntity();
 		entity.setIdEmpleado(idEmpleado);
+		return entity;
+	}
+
+	/** A diferencia de las demas FKs, el grupo es opcional: null = sin grupo. */
+	default GrupoActivosEntity mapGrupo(Integer idGrupo) {
+		if (idGrupo == null) {
+			return null;
+		}
+		GrupoActivosEntity entity = new GrupoActivosEntity();
+		entity.setIdGrupo(idGrupo);
 		return entity;
 	}
 

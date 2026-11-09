@@ -11,5 +11,6 @@ public interface IActivoRepositorio {
 	Optional<Activo> buscarPorSerial(String serial);
 	Optional<Activo> buscarPorCodigoInventario(String codigoInventario);
 	List<Activo> listarTodos();
+	List<Activo> listarPorGrupo(int idGrupo);
 	void eliminar(int idActivo);
 }

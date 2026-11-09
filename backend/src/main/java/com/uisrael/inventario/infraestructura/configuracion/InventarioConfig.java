@@ -41,6 +41,7 @@ import com.uisrael.inventario.dominio.repositorios.IActivoDetalleRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IActivoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.ICargoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IEmpleadoRepositorio;
+import com.uisrael.inventario.dominio.repositorios.IGrupoActivosRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IOficinaRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IUsuarioTiRepositorio;
 import com.uisrael.inventario.infraestructura.correo.GraphEmailSenderImpl;
@@ -50,6 +51,7 @@ import com.uisrael.inventario.infraestructura.persistencia.adaptadores.ActivoDet
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.ActivoRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.CargoRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.EmpleadoRepositorioImpl;
+import com.uisrael.inventario.infraestructura.persistencia.adaptadores.GrupoActivosRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.OficinaRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.adaptadores.UsuarioTiRepositorioImpl;
 import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IActaEntregaRecepcionJpaMapper;
@@ -57,6 +59,7 @@ import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IActivoDet
 import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IActivoJpaMapper;
 import com.uisrael.inventario.infraestructura.persistencia.mapeadores.ICargoJpaMapper;
 import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IEmpleadoJpaMapper;
+import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IGrupoActivosJpaMapper;
 import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IOficinaJpaMapper;
 import com.uisrael.inventario.infraestructura.persistencia.mapeadores.IUsuarioTiJpaMapper;
 import com.uisrael.inventario.infraestructura.repositorios.IActaEntregaRecepcionJpaRepositorio;
@@ -64,6 +67,7 @@ import com.uisrael.inventario.infraestructura.repositorios.IActivoDetalleJpaRepo
 import com.uisrael.inventario.infraestructura.repositorios.IActivoJpaRepositorio;
 import com.uisrael.inventario.infraestructura.repositorios.ICargoJpaRepositorio;
 import com.uisrael.inventario.infraestructura.repositorios.IEmpleadoJpaRepositorio;
+import com.uisrael.inventario.infraestructura.repositorios.IGrupoActivosJpaRepositorio;
 import com.uisrael.inventario.infraestructura.repositorios.IOficinaJpaRepositorio;
 import com.uisrael.inventario.infraestructura.repositorios.IUsuarioTiJpaRepositorio;
 
@@ -140,6 +144,11 @@ public class InventarioConfig {
 	@Bean
 	IActivoRepositorio activoRepositorio(IActivoJpaRepositorio jpaRepositorio, IActivoJpaMapper mapper) {
 		return new ActivoRepositorioImpl(jpaRepositorio, mapper);
+	}
+
+	@Bean
+	IGrupoActivosRepositorio grupoActivosRepositorio(IGrupoActivosJpaRepositorio jpaRepositorio, IGrupoActivosJpaMapper mapper) {
+		return new GrupoActivosRepositorioImpl(jpaRepositorio, mapper);
 	}
 
 	@Bean

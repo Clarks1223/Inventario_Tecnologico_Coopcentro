@@ -20,6 +20,8 @@ public class Activo {
 	private String estado;
 	private int idOficina;
 	private String observaciones;
+	/** Grupo al que pertenece; null si no esta en ninguno. */
+	private Integer idGrupo;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 
