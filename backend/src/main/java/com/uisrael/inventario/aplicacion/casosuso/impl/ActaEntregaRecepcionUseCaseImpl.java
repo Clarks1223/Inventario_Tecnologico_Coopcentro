@@ -1,5 +1,6 @@
 package com.uisrael.inventario.aplicacion.casosuso.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,11 +11,13 @@ import com.uisrael.inventario.aplicacion.casosuso.entrada.IActaEntregaRecepcionU
 import com.uisrael.inventario.dominio.entidades.ActaEntregaRecepcion;
 import com.uisrael.inventario.dominio.entidades.Activo;
 import com.uisrael.inventario.dominio.entidades.Empleado;
+import com.uisrael.inventario.dominio.entidades.GrupoActivos;
 import com.uisrael.inventario.dominio.entidades.UsuarioTi;
 import com.uisrael.inventario.dominio.excepciones.NegocioException;
 import com.uisrael.inventario.dominio.repositorios.IActaEntregaRecepcionRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IActivoRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IEmpleadoRepositorio;
+import com.uisrael.inventario.dominio.repositorios.IGrupoActivosRepositorio;
 import com.uisrael.inventario.dominio.repositorios.IUsuarioTiRepositorio;
 import com.uisrael.inventario.dominio.valores.EstadoActa;
 import com.uisrael.inventario.dominio.valores.EstadoActivo;
@@ -33,15 +36,17 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 	private final IEmpleadoRepositorio empleadoRepositorio;
 	private final IUsuarioTiRepositorio usuarioTiRepositorio;
 	private final IActaDocumentoUseCase actaDocumentoUseCase;
+	private final IGrupoActivosRepositorio grupoRepositorio;
 
 	public ActaEntregaRecepcionUseCaseImpl(IActaEntregaRecepcionRepositorio repositorio, IActivoRepositorio activoRepositorio,
 			IEmpleadoRepositorio empleadoRepositorio, IUsuarioTiRepositorio usuarioTiRepositorio,
-			IActaDocumentoUseCase actaDocumentoUseCase) {
+			IActaDocumentoUseCase actaDocumentoUseCase, IGrupoActivosRepositorio grupoRepositorio) {
 		this.repositorio = repositorio;
 		this.activoRepositorio = activoRepositorio;
 		this.empleadoRepositorio = empleadoRepositorio;
 		this.usuarioTiRepositorio = usuarioTiRepositorio;
 		this.actaDocumentoUseCase = actaDocumentoUseCase;
+		this.grupoRepositorio = grupoRepositorio;
 	}
 
 	/**
@@ -102,6 +107,15 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 		return usuarioTi;
 	}
 
+	private Empleado validarEmpleadoActivo(int idEmpleado) {
+		Empleado empleado = empleadoRepositorio.buscarPorId(idEmpleado)
+				.orElseThrow(() -> new NegocioException("Empleado no encontrado"));
+		if (!empleado.isActivo()) {
+			throw new NegocioException("El empleado no esta activo");
+		}
+		return empleado;
+	}
+
 	@Override
 	@Transactional
 	public ActaEntregaRecepcion asignar(int idActivo, int idEmpleado, int idUsuarioTi, String motivo) {
@@ -118,25 +132,89 @@ public class ActaEntregaRecepcionUseCaseImpl implements IActaEntregaRecepcionUse
 			throw new NegocioException("El activo ya esta entregado a un empleado; registre la devolucion primero");
 		}
 
-		Empleado empleado = empleadoRepositorio.buscarPorId(idEmpleado)
-				.orElseThrow(() -> new NegocioException("Empleado no encontrado"));
-		if (!empleado.isActivo()) {
-			throw new NegocioException("El empleado no esta activo");
-		}
-
+		Empleado empleado = validarEmpleadoActivo(idEmpleado);
 		validarUsuarioTiActivo(idUsuarioTi);
 
-		// Sale de la bodega para pasar al empleado: se cierra la custodia y se
-		// abre la entrega, de modo que siempre haya exactamente un acta abierta.
-		actaAbierta.cerrar("Entrega a " + empleado.getNombre() + " " + empleado.getApellido());
-		repositorio.guardar(actaAbierta);
+		return entregar(actaAbierta, empleado, idUsuarioTi, motivo, null, true);
+	}
 
-		ActaEntregaRecepcion guardada = repositorio
-				.guardar(ActaEntregaRecepcion.entregaAEmpleado(idActivo, idEmpleado, idUsuarioTi, motivo));
+	/**
+	 * Saca el activo de la bodega para pasarlo al empleado: se cierra la
+	 * custodia y se abre la entrega, de modo que siempre haya exactamente un
+	 * acta abierta. Las validaciones ya se hicieron antes de llamar.
+	 *
+	 * @param emitirActa false cuando la entrega forma parte de un lote: el PDF
+	 *                   se emite al final, agrupado con el resto del paquete.
+	 */
+	private ActaEntregaRecepcion entregar(ActaEntregaRecepcion custodia, Empleado empleado, int idUsuarioTi,
+			String motivo, String observacion, boolean emitirActa) {
+		custodia.cerrar("Entrega a " + empleado.getNombre() + " " + empleado.getApellido());
+		repositorio.guardar(custodia);
 
-		generarPdfSinFallar(guardada.getIdActa());
+		ActaEntregaRecepcion entrega = ActaEntregaRecepcion.entregaAEmpleado(custodia.getIdActivo(),
+				empleado.getIdEmpleado(), idUsuarioTi, motivo);
+		if (observacion != null && !observacion.isBlank()) {
+			entrega.setObservacion(observacion);
+		}
+		ActaEntregaRecepcion guardada = repositorio.guardar(entrega);
 
+		if (emitirActa) {
+			generarPdfSinFallar(guardada.getIdActa());
+		}
 		return guardada;
+	}
+
+	@Override
+	@Transactional
+	public List<ActaEntregaRecepcion> asignarGrupo(int idGrupo, int idEmpleado, int idUsuarioTi, String motivo,
+			String observacion) {
+		GrupoActivos grupo = grupoRepositorio.buscarPorId(idGrupo)
+				.orElseThrow(() -> new NegocioException("Grupo no encontrado"));
+		List<Activo> activos = activoRepositorio.listarPorGrupo(idGrupo);
+		if (activos.isEmpty()) {
+			throw new NegocioException("El grupo no tiene activos");
+		}
+
+		Empleado empleado = validarEmpleadoActivo(idEmpleado);
+		validarUsuarioTiActivo(idUsuarioTi);
+
+		// Se valida el grupo completo antes de escribir nada: o se entrega todo o
+		// nada, y el mensaje dice exactamente que activos lo impiden.
+		List<ActaEntregaRecepcion> custodias = new ArrayList<>();
+		List<String> bloqueantes = new ArrayList<>();
+		for (Activo activo : activos) {
+			Optional<ActaEntregaRecepcion> actaAbierta = buscarActaAbierta(activo.getIdActivo());
+			if (!EstadoActivo.esOperativo(activo.getEstado())) {
+				bloqueantes.add(activo.getSerial() + " ("
+						+ GrupoActivosUseCaseImpl.describirEstadoNoOperativo(activo.getEstado()) + ")");
+			} else if (actaAbierta.isEmpty()) {
+				bloqueantes.add(activo.getSerial() + " (sin acta abierta)");
+			} else if (!EstadoActa.esCustodiaDeTi(actaAbierta.get().getEstadoAsignacion())) {
+				bloqueantes.add(activo.getSerial() + " (entregado a "
+						+ nombreDe(actaAbierta.get().getIdEmpleado()) + ")");
+			} else {
+				custodias.add(actaAbierta.get());
+			}
+		}
+		if (!bloqueantes.isEmpty()) {
+			throw new NegocioException("No se puede asignar el grupo: " + String.join(", ", bloqueantes));
+		}
+
+		String motivoGrupo = "Asignacion del grupo " + grupo.getNombre()
+				+ (motivo == null || motivo.isBlank() ? "" : ": " + motivo);
+		List<ActaEntregaRecepcion> entregadas = custodias.stream()
+				.map(custodia -> entregar(custodia, empleado, idUsuarioTi, motivoGrupo, observacion, false))
+				.toList();
+
+		// Un solo paquete: la PC lleva embebidos sus perifericos en su acta.
+		generarPdfsDelPaqueteSinFallar(entregadas.stream().map(ActaEntregaRecepcion::getIdActa).toList());
+		return entregadas;
+	}
+
+	private String nombreDe(int idEmpleado) {
+		return empleadoRepositorio.buscarPorId(idEmpleado)
+				.map(empleado -> empleado.getNombre() + " " + empleado.getApellido())
+				.orElse("otro empleado");
 	}
 
 	@Override

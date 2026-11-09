@@ -213,9 +213,9 @@ public class InventarioConfig {
 	@Bean
 	IActaEntregaRecepcionUseCase actaEntregaRecepcionUseCase(IActaEntregaRecepcionRepositorio repositorio, IActivoRepositorio activoRepositorio,
 			IEmpleadoRepositorio empleadoRepositorio, IUsuarioTiRepositorio usuarioTiRepositorio,
-			IActaDocumentoUseCase actaDocumentoUseCase) {
+			IActaDocumentoUseCase actaDocumentoUseCase, IGrupoActivosRepositorio grupoRepositorio) {
 		return new ActaEntregaRecepcionUseCaseImpl(repositorio, activoRepositorio, empleadoRepositorio, usuarioTiRepositorio,
-				actaDocumentoUseCase);
+				actaDocumentoUseCase, grupoRepositorio);
 	}
 
 	@Bean
