@@ -169,7 +169,7 @@ export const useActivos = () => {
         Oficina: row.oficina_nombre || '',
         Custodio: row.empleado_asignado || '',
         Custodia: etiquetaDeCustodia(row),
-        Observaciones: row.observaciones || '',
+        'Observaciones en el Acta': row.observaciones || '',
         'Descripción del Estado': row.descripcion_estado || '',
         'Tipo Conexión': detalle.tipo_conexion || '',
         'Estado Batería': detalle.estado_bateria || '',
