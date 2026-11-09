@@ -3,6 +3,7 @@ import { asignacionesService } from '../services/asignacionesService';
 import { empleadosService } from '../services/empleadosService';
 import { activosService } from '../services/activosService';
 import { oficinasService } from '../services/oficinasService';
+import { gruposService } from '../services/gruposService';
 import { useSession } from './useSession';
 import { useSnackbar } from './useSnackbar';
 import { useConfirmDialog } from './useConfirmDialog';
@@ -17,6 +18,7 @@ export const useAsignaciones = () => {
   const [usuariosTi, setUsuariosTi] = useState([]);
   const [oficinas, setOficinas] = useState([]);
   const [cargos, setCargos] = useState([]);
+  const [grupos, setGrupos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [busquedaEmpleado, setBusquedaEmpleado] = useState('');
@@ -30,14 +32,16 @@ export const useAsignaciones = () => {
   const fetchAll = useCallback(async (signal) => {
     setIsLoading(true);
     try {
-      const [actasRes, empleadosRes, activosRes, usuariosTiRes, oficinasRes, cargosRes] = await Promise.all([
+      const [actasRes, empleadosRes, activosRes, usuariosTiRes, oficinasRes, cargosRes, gruposRes] = await Promise.all([
         asignacionesService.getAsignaciones({ signal }),
         empleadosService.getEmpleados({ signal }),
         activosService.getActivos({ signal }),
         asignacionesService.getUsuariosTi(),
         oficinasService.getOficinas(),
         empleadosService.getCargos(),
+        gruposService.getGrupos({ signal }),
       ]);
+      setGrupos(gruposRes.data || []);
       setAllAsignaciones(actasRes.data || []);
       setEmpleados(empleadosRes.data || []);
       setActivos(activosRes.data || []);
@@ -261,6 +265,38 @@ export const useAsignaciones = () => {
   }, [empleadoSeleccionado, sesion, fetchAll, showSnackbar, activoDe]);
 
   /**
+   * Entrega el grupo completo al empleado seleccionado. El backend lo hace todo
+   * o nada: si algún activo no está en bodega, rechaza con la lista de seriales
+   * y el diálogo queda abierto para que el técnico decida qué hacer.
+   *
+   * @returns true si el grupo quedó asignado.
+   */
+  const handleAssignGrupo = useCallback(async ({ id_grupo, motivo = null }) => {
+    let idsActas;
+    try {
+      const { data } = await gruposService.asignarGrupo(id_grupo, {
+        id_empleado: empleadoSeleccionado,
+        id_usuario_ti: sesion?.id_usuario_ti,
+        motivo,
+        observacion: null,
+      });
+      idsActas = (data || []).map((acta) => acta.id_acta);
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || 'Error al asignar el grupo', 'error');
+      return false;
+    }
+    setOpen(false);
+    fetchAll();
+    // Mismo patrón que "Devolver todo": las actas del paquete se archivan
+    // juntas para que la PC lleve embebidos sus periféricos.
+    await archivarYAvisar(
+      () => asignacionesService.archivarLote(idsActas),
+      'No se pudieron generar las actas de entrega'
+    );
+    return true;
+  }, [empleadoSeleccionado, sesion, fetchAll, showSnackbar, archivarYAvisar]);
+
+  /**
    * Archiva todas las actas vigentes del empleado, agrupadas entre sí (la PC
    * con sus periféricos, el móvil con su impresora), y avisa la carpeta.
    */
@@ -339,6 +375,8 @@ export const useAsignaciones = () => {
     open,
     setOpen,
     handleAssign,
+    grupos,
+    handleAssignGrupo,
     accionActaAbierta: confirmDialog.open,
     accionActaActual,
     iniciarAccionActa,
