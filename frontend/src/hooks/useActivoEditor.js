@@ -3,6 +3,7 @@ import { activosService } from '../services/activosService';
 import { useSnackbar } from './useSnackbar';
 import { useSession } from './useSession';
 import { ESTADO_ACTIVO } from '../constants/activosConstants';
+import { normalizarDescripcionEstado } from '../utils/descripcionEstado';
 
 const emptyBaseData = {
   codigo_inventario: '',
@@ -13,6 +14,7 @@ const emptyBaseData = {
   estado: ESTADO_ACTIVO.OPERATIVO,
   id_oficina: '',
   observaciones: '',
+  descripcion_estado: '',
 };
 
 export const useActivoEditor = (onSaveSuccess) => {
@@ -38,7 +40,12 @@ export const useActivoEditor = (onSaveSuccess) => {
   const handleSave = useCallback(async () => {
     // El activo queda a cargo de quien lo registra, para que no exista ningún
     // momento en el que nadie responda por él.
-    const payload = { ...baseData, tipo_activo: tipo, id_usuario_ti: sesion?.id_usuario_ti };
+    const payload = {
+      ...baseData,
+      descripcion_estado: normalizarDescripcionEstado(baseData.descripcion_estado),
+      tipo_activo: tipo,
+      id_usuario_ti: sesion?.id_usuario_ti,
+    };
     payload.detalle = { ...detailData, id_activo: editId || 0 };
 
     try {
@@ -90,6 +97,7 @@ export const useActivoEditor = (onSaveSuccess) => {
       estado: row.estado,
       id_oficina: row.id_oficina || '',
       observaciones: row.observaciones || '',
+      descripcion_estado: row.descripcion_estado || '',
     });
     setDetailData(row.detalle || {});
     setOpen(true);

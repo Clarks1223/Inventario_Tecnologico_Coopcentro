@@ -158,7 +158,7 @@ public class ActivoUseCaseImpl implements IActivoUseCase {
 		}
 		if (detalle.getDominio() != null
 				&& existeConflictoOperativo(detalleRepositorio.buscarPorDominio(detalle.getDominio()), detalle)) {
-			throw new NegocioException("Ya existe un activo operativo con ese dominio");
+			throw new NegocioException("Ya existe un activo operativo con ese hostname");
 		}
 	}
 

@@ -31,6 +31,7 @@ export const useActivos = () => {
     serial: '',
     estado: '',
     custodia: '',
+    custodio: '',
     id_oficina: '',
     ip: '',
     dominio: '',
@@ -134,6 +135,7 @@ export const useActivos = () => {
   const filteredActivos = useMemo(() => {
     return activosConCustodio
       .filter(coincideCustodia)
+      .filter((a) => !filters.custodio || a.empleado_asignado?.toLowerCase().includes(filters.custodio.toLowerCase()))
       .filter((a) => !filters.tipo_activo || a.tipo_activo === filters.tipo_activo)
       .filter((a) => !filters.marca || a.marca?.toLowerCase().includes(filters.marca.toLowerCase()))
       .filter((a) => !filters.modelo || a.modelo?.toLowerCase().includes(filters.modelo.toLowerCase()))
@@ -167,7 +169,8 @@ export const useActivos = () => {
         Oficina: row.oficina_nombre || '',
         Custodio: row.empleado_asignado || '',
         Custodia: etiquetaDeCustodia(row),
-        Observaciones: row.observaciones || '',
+        'Observaciones en el Acta': row.observaciones || '',
+        'Descripción del Estado': row.descripcion_estado || '',
         'Tipo Conexión': detalle.tipo_conexion || '',
         'Estado Batería': detalle.estado_bateria || '',
         'Modelo Cabezal': detalle.modelo_cabezal || '',
@@ -180,7 +183,7 @@ export const useActivos = () => {
         'Tipo Almacenamiento': detalle.tipo_almacenamiento || '',
         'Almacenamiento (GB)': detalle.almacenamiento_gb ?? '',
         IP: detalle.ip || '',
-        Dominio: detalle.dominio || '',
+        Hostname: detalle.dominio || '',
         Cargador: detalle.incluye_cargador === undefined || detalle.incluye_cargador === null
           ? '' : (detalle.incluye_cargador ? 'Sí' : 'No'),
         'Cable USB': detalle.incluye_cable_usb === undefined || detalle.incluye_cable_usb === null

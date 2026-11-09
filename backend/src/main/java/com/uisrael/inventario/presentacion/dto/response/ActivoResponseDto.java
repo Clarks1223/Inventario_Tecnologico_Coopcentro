@@ -16,6 +16,9 @@ public class ActivoResponseDto {
 	private String estado;
 	private int idOficina;
 	private String observaciones;
+	private String descripcionEstado;
+	private Integer idGrupo;
+	private String nombreGrupo;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	private ActivoDetalleResponseDto detalle;

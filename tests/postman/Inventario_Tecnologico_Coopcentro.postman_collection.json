@@ -1,0 +1,5852 @@
+{
+	"info": {
+		"_postman_id": "b7f2c1a4-8e3d-4d21-9a76-inventario0001",
+		"name": "Inventario Tecnológico Coopcentro - API",
+		"description": "Colección de pruebas end-to-end de la API REST del Inventario Tecnológico.\n\n## Cómo usarla\n1. Levantar el backend (`mvn spring-boot:run` en `backend/`). Por defecto escucha en `http://localhost:8080`.\n2. Importar esta colección y el environment `Inventario - Local.postman_environment.json`.\n3. Ejecutar con **Runner** la colección completa **en orden** (las carpetas están numeradas y comparten variables).\n\nLa carpeta `00 - Setup` genera datos únicos aleatorios en cada ejecución (nombres, cédulas, correos, seriales, IMEI, IP), por lo que la colección se puede correr muchas veces sin chocar con las validaciones de unicidad.\n\nLa carpeta `09 - Limpieza` borra todo lo creado, dejando la base como estaba.\n\n## Notas\n- La API no tiene Spring Security ni tokens: no se requiere cabecera Authorization.\n- El backend traduce toda excepción de negocio y de validación a **HTTP 400** con `{\"message\": \"...\"}` (ver `GlobalExceptionHandler`). Por eso los casos \"no encontrado\" se verifican como 400 y no 404.\n- La contraseña inicial de un usuario TI recién creado es la **cédula** del empleado asociado.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"event": [
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Assert común a todas las peticiones de la colección.",
+					"pm.test('Tiempo de respuesta aceptable (< 5s)', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api"
+		},
+		{
+			"key": "sufijo",
+			"value": ""
+		},
+		{
+			"key": "idOficina",
+			"value": ""
+		},
+		{
+			"key": "idCargo",
+			"value": ""
+		},
+		{
+			"key": "idEmpleado",
+			"value": ""
+		},
+		{
+			"key": "idEmpleadoTi",
+			"value": ""
+		},
+		{
+			"key": "idUsuarioTi",
+			"value": ""
+		},
+		{
+			"key": "idActivoLaptop",
+			"value": ""
+		},
+		{
+			"key": "idActivoMovil",
+			"value": ""
+		},
+		{
+			"key": "idActivoPeriferico",
+			"value": ""
+		},
+		{
+			"key": "idActa",
+			"value": ""
+		},
+		{
+			"key": "idActaMovil",
+			"value": ""
+		},
+		{
+			"key": "idActivoExtra",
+			"value": ""
+		},
+		{
+			"key": "idActaExtra",
+			"value": ""
+		},
+		{
+			"key": "idActivoImpresora",
+			"value": ""
+		},
+		{
+			"key": "idActaImpresora",
+			"value": ""
+		},
+		{
+			"key": "idGrupo",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "00 - Setup",
+			"description": "Verifica que la API responda y genera los datos únicos que usará el resto de la colección.",
+			"item": [
+				{
+					"name": "Health check + generar datos únicos",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Genera datos únicos por ejecución. Los nombres de oficina/cargo/empleado",
+									"// solo admiten letras y espacios, por eso el sufijo es alfabético.",
+									"const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';",
+									"const DIGITOS = '0123456789';",
+									"const azar = (largo, alfabeto) => Array.from({ length: largo }, function () {",
+									"    return alfabeto.charAt(Math.floor(Math.random() * alfabeto.length));",
+									"}).join('');",
+									"",
+									"const sufijo = azar(5, LETRAS);",
+									"const minus = sufijo.toLowerCase();",
+									"",
+									"pm.collectionVariables.set('sufijo', sufijo);",
+									"",
+									"// Oficina / cargo",
+									"pm.collectionVariables.set('oficinaNombre', 'Oficina ' + sufijo);",
+									"pm.collectionVariables.set('cargoNombre', 'Cargo ' + sufijo);",
+									"pm.collectionVariables.set('cargoNombreEditado', 'Cargo ' + sufijo + ' Editado');",
+									"",
+									"// Empleado que recibirá los activos",
+									"pm.collectionVariables.set('empleadoNombre', 'Empleado ' + sufijo);",
+									"pm.collectionVariables.set('empleadoApellido', 'Prueba ' + sufijo);",
+									"pm.collectionVariables.set('empleadoCedula', azar(10, DIGITOS));",
+									"pm.collectionVariables.set('empleadoCorreo', 'qa.emp.' + minus + '@coopcentro.test');",
+									"",
+									"// Empleado del área de TI (será el usuario TI que firma las actas)",
+									"pm.collectionVariables.set('empleadoTiNombre', 'Soporte ' + sufijo);",
+									"pm.collectionVariables.set('empleadoTiApellido', 'Sistemas ' + sufijo);",
+									"pm.collectionVariables.set('empleadoTiCedula', azar(10, DIGITOS));",
+									"pm.collectionVariables.set('empleadoTiCorreo', 'qa.ti.' + minus + '@coopcentro.test');",
+									"pm.collectionVariables.set('usuarioTiCorreo', 'qa.acceso.' + minus + '@coopcentro.test');",
+									"pm.collectionVariables.set('usuarioTiCorreoEditado', 'qa.acceso2.' + minus + '@coopcentro.test');",
+									"pm.collectionVariables.set('contrasenaNueva', 'Qa' + sufijo + '2026*');",
+									"",
+									"// Activos",
+									"pm.collectionVariables.set('codigoLaptop', 'INV-LAP-' + sufijo);",
+									"pm.collectionVariables.set('serialLaptop', 'SN-LAP-' + sufijo);",
+									"pm.collectionVariables.set('codigoMovil', 'INV-MOV-' + sufijo);",
+									"pm.collectionVariables.set('serialMovil', 'SN-MOV-' + sufijo);",
+									"pm.collectionVariables.set('codigoPeriferico', 'INV-PER-' + sufijo);",
+									"pm.collectionVariables.set('serialPeriferico', 'SN-PER-' + sufijo);",
+									"pm.collectionVariables.set('imei', azar(15, DIGITOS));",
+									"pm.collectionVariables.set('numeroLinea', '09' + azar(8, DIGITOS));",
+									"",
+									"const octeto = () => String(1 + Math.floor(Math.random() * 253));",
+									"pm.collectionVariables.set('ipLaptop', '10.' + octeto() + '.' + octeto() + '.' + octeto());",
+									"pm.collectionVariables.set('dominioLaptop', 'qa-' + minus + '.coopcentro.local');",
+									"",
+									"console.log('Datos de esta ejecución -> sufijo: ' + sufijo);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('La API responde 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Devuelve un arreglo de oficinas', function () {",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Las variables únicas quedaron generadas', function () {",
+									"    pm.expect(pm.collectionVariables.get('sufijo')).to.have.lengthOf(5);",
+									"    pm.expect(pm.collectionVariables.get('empleadoCedula')).to.match(/^[0-9]{10}$/);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oficinas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas"
+							]
+						},
+						"description": "Sirve de health check y dispara el script que genera los datos únicos de la corrida."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "01 - Oficinas (CRUD)",
+			"item": [
+				{
+					"name": "CREATE - Crear oficina",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const oficina = pm.response.json();",
+									"",
+									"pm.test('Devuelve el id generado', function () {",
+									"    pm.expect(oficina.idOficina).to.be.a('number').and.to.be.above(0);",
+									"});",
+									"",
+									"pm.test('Persiste los datos enviados', function () {",
+									"    pm.expect(oficina.nombre).to.eql(pm.collectionVariables.get('oficinaNombre'));",
+									"    pm.expect(oficina.activo).to.eql(true);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idOficina', oficina.idOficina);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{oficinaNombre}}\",\n  \"direccion\": \"Av. Principal 123 y Calle Secundaria\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oficinas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Nombre duplicado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa el conflicto de nombre', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe una oficina con ese nombre');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{oficinaNombre}}\",\n  \"direccion\": \"Otra direccion cualquiera\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oficinas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Datos inválidos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const mensaje = pm.response.json().message;",
+									"",
+									"pm.test('Reporta el nombre demasiado corto', function () {",
+									"    pm.expect(mensaje).to.include('nombre');",
+									"});",
+									"",
+									"pm.test('Reporta la dirección obligatoria', function () {",
+									"    pm.expect(mensaje).to.include('obligatorio');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"A\",\n  \"direccion\": \"\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oficinas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas"
+							]
+						},
+						"description": "Nombre con menos de 3 caracteres y dirección vacía: valida el @Valid del DTO."
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Listar oficinas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const lista = pm.response.json();",
+									"",
+									"pm.test('Devuelve un arreglo', function () {",
+									"    pm.expect(lista).to.be.an('array').that.is.not.empty;",
+									"});",
+									"",
+									"pm.test('Incluye la oficina recién creada', function () {",
+									"    const ids = lista.map(function (o) { return o.idOficina; });",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idOficina')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oficinas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener oficina por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const oficina = pm.response.json();",
+									"",
+									"pm.test('Devuelve la oficina solicitada', function () {",
+									"    pm.expect(oficina.idOficina).to.eql(Number(pm.collectionVariables.get('idOficina')));",
+									"    pm.expect(oficina.nombre).to.eql(pm.collectionVariables.get('oficinaNombre'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oficinas/{{idOficina}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas",
+								"{{idOficina}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ (error) - Oficina inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Oficina no encontrada');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oficinas/99999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas",
+								"99999999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Actualizar oficina",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const oficina = pm.response.json();",
+									"",
+									"pm.test('Conserva el mismo id', function () {",
+									"    pm.expect(oficina.idOficina).to.eql(Number(pm.collectionVariables.get('idOficina')));",
+									"});",
+									"",
+									"pm.test('Actualiza la dirección', function () {",
+									"    pm.expect(oficina.direccion).to.eql('Av. Actualizada 456 y Transversal');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{oficinaNombre}}\",\n  \"direccion\": \"Av. Actualizada 456 y Transversal\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/oficinas/{{idOficina}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas",
+								"{{idOficina}}"
+							]
+						},
+						"description": "Mantener el mismo nombre no debe disparar el error de duplicado (la validación excluye al propio registro)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02 - Cargos (CRUD)",
+			"item": [
+				{
+					"name": "CREATE - Crear cargo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const cargo = pm.response.json();",
+									"",
+									"pm.test('Devuelve el id generado', function () {",
+									"    pm.expect(cargo.idCargo).to.be.a('number').and.to.be.above(0);",
+									"});",
+									"",
+									"pm.test('El backend normaliza el nombre a MAYÚSCULAS', function () {",
+									"    pm.expect(cargo.nombre).to.eql(pm.collectionVariables.get('cargoNombre').toUpperCase());",
+									"});",
+									"",
+									"pm.collectionVariables.set('idCargo', cargo.idCargo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{cargoNombre}}\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cargos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Nombre duplicado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa el conflicto de nombre', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe un cargo con ese nombre');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{cargoNombre}}\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cargos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Nombre con números",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Reporta que solo admite letras y espacios', function () {",
+									"    pm.expect(pm.response.json().message).to.include('letras');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Cargo 123\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cargos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Listar cargos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const lista = pm.response.json();",
+									"",
+									"pm.test('Incluye el cargo recién creado', function () {",
+									"    const ids = lista.map(function (c) { return c.idCargo; });",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idCargo')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cargos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener cargo por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Devuelve el cargo solicitado', function () {",
+									"    pm.expect(pm.response.json().idCargo).to.eql(Number(pm.collectionVariables.get('idCargo')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cargos/{{idCargo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos",
+								"{{idCargo}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ (error) - Cargo inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Cargo no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cargos/99999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos",
+								"99999999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Renombrar cargo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const cargo = pm.response.json();",
+									"",
+									"pm.test('Conserva el id y aplica el nuevo nombre en mayúsculas', function () {",
+									"    pm.expect(cargo.idCargo).to.eql(Number(pm.collectionVariables.get('idCargo')));",
+									"    pm.expect(cargo.nombre).to.eql(pm.collectionVariables.get('cargoNombreEditado').toUpperCase());",
+									"});",
+									"",
+									"pm.test('Sigue activo (necesario para asignarle empleados)', function () {",
+									"    pm.expect(cargo.activo).to.eql(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{cargoNombreEditado}}\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cargos/{{idCargo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos",
+								"{{idCargo}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03 - Empleados (CRUD)",
+			"item": [
+				{
+					"name": "CREATE - Crear empleado (rol por defecto)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const empleado = pm.response.json();",
+									"",
+									"pm.test('Devuelve el id generado', function () {",
+									"    pm.expect(empleado.idEmpleado).to.be.a('number').and.to.be.above(0);",
+									"});",
+									"",
+									"pm.test('Aplica el rol por defecto \\'usuario\\' al omitirlo', function () {",
+									"    pm.expect(empleado.rol).to.eql('usuario');",
+									"});",
+									"",
+									"pm.test('Queda vinculado a la oficina y el cargo creados', function () {",
+									"    pm.expect(empleado.idOficina).to.eql(Number(pm.collectionVariables.get('idOficina')));",
+									"    pm.expect(empleado.idCargo).to.eql(Number(pm.collectionVariables.get('idCargo')));",
+									"});",
+									"",
+									"pm.collectionVariables.set('idEmpleado', empleado.idEmpleado);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{empleadoNombre}}\",\n  \"apellido\": \"{{empleadoApellido}}\",\n  \"cedula\": \"{{empleadoCedula}}\",\n  \"correo\": \"{{empleadoCorreo}}\",\n  \"extensionTelefonica\": \"1050\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Crear empleado de TI (rol administrador)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const empleado = pm.response.json();",
+									"",
+									"pm.test('Respeta el rol administrador enviado', function () {",
+									"    pm.expect(empleado.rol).to.eql('administrador');",
+									"});",
+									"",
+									"pm.collectionVariables.set('idEmpleadoTi', empleado.idEmpleado);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{empleadoTiNombre}}\",\n  \"apellido\": \"{{empleadoTiApellido}}\",\n  \"cedula\": \"{{empleadoTiCedula}}\",\n  \"correo\": \"{{empleadoTiCorreo}}\",\n  \"extensionTelefonica\": \"1043\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"rol\": \"administrador\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados"
+							]
+						},
+						"description": "Este empleado será el usuario TI que registra las asignaciones en la carpeta 07."
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Cédula duplicada",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa la cédula duplicada', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe un empleado con esa cedula');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Duplicado\",\n  \"apellido\": \"Prueba\",\n  \"cedula\": \"{{empleadoCedula}}\",\n  \"correo\": \"otro.correo.{{sufijo}}@coopcentro.test\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Correo y cédula inválidos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const mensaje = pm.response.json().message;",
+									"",
+									"pm.test('Reporta la cédula de 10 dígitos', function () {",
+									"    pm.expect(mensaje).to.include('10 dígitos');",
+									"});",
+									"",
+									"pm.test('Reporta el correo inválido', function () {",
+									"    pm.expect(mensaje).to.include('correo electrónico válido');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Correo Malo\",\n  \"apellido\": \"Prueba\",\n  \"cedula\": \"123\",\n  \"correo\": \"esto-no-es-un-correo\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Cargo inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el cargo no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Cargo no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Sin Cargo\",\n  \"apellido\": \"Prueba\",\n  \"cedula\": \"1122334455\",\n  \"correo\": \"sin.cargo.{{sufijo}}@coopcentro.test\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": 99999999,\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Listar empleados",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const lista = pm.response.json();",
+									"",
+									"pm.test('Incluye los dos empleados creados', function () {",
+									"    const ids = lista.map(function (e) { return e.idEmpleado; });",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idEmpleado')));",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idEmpleadoTi')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/empleados",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener empleado por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const empleado = pm.response.json();",
+									"",
+									"pm.test('Devuelve el empleado solicitado', function () {",
+									"    pm.expect(empleado.idEmpleado).to.eql(Number(pm.collectionVariables.get('idEmpleado')));",
+									"    pm.expect(empleado.cedula).to.eql(pm.collectionVariables.get('empleadoCedula'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/empleados/{{idEmpleado}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"{{idEmpleado}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ (error) - Empleado inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Empleado no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/empleados/99999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"99999999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Actualizar empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const empleado = pm.response.json();",
+									"",
+									"pm.test('Conserva el mismo id', function () {",
+									"    pm.expect(empleado.idEmpleado).to.eql(Number(pm.collectionVariables.get('idEmpleado')));",
+									"});",
+									"",
+									"pm.test('Actualiza la extensión telefónica', function () {",
+									"    pm.expect(empleado.extensionTelefonica).to.eql('2075');",
+									"});",
+									"",
+									"pm.test('Sigue activo', function () {",
+									"    pm.expect(empleado.activo).to.eql(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{empleadoNombre}}\",\n  \"apellido\": \"{{empleadoApellido}}\",\n  \"cedula\": \"{{empleadoCedula}}\",\n  \"correo\": \"{{empleadoCorreo}}\",\n  \"extensionTelefonica\": \"2075\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"rol\": \"usuario\",\n  \"activo\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados/{{idEmpleado}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"{{idEmpleado}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04 - Usuarios TI y acceso (CRUD)",
+			"description": "El usuario TI se crea sin contraseña: el backend usa la cédula del empleado como contraseña inicial y marca `debeCambiarContrasena = true`.",
+			"item": [
+				{
+					"name": "CREATE - Crear usuario TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const usuario = pm.response.json();",
+									"",
+									"pm.test('Devuelve el id generado', function () {",
+									"    pm.expect(usuario.idUsuarioTi).to.be.a('number').and.to.be.above(0);",
+									"});",
+									"",
+									"pm.test('Queda vinculado al empleado de TI', function () {",
+									"    pm.expect(usuario.idEmpleado).to.eql(Number(pm.collectionVariables.get('idEmpleadoTi')));",
+									"});",
+									"",
+									"pm.test('No expone la contraseña en la respuesta', function () {",
+									"    pm.expect(usuario).to.not.have.property('contrasena');",
+									"});",
+									"",
+									"pm.collectionVariables.set('idUsuarioTi', usuario.idUsuarioTi);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idEmpleado\": {{idEmpleadoTi}},\n  \"correo\": \"{{usuarioTiCorreo}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Empleado inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el empleado no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Empleado no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idEmpleado\": 99999999,\n  \"correo\": \"fantasma.{{sufijo}}@coopcentro.test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Listar usuarios TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Incluye el usuario TI creado', function () {",
+									"    const ids = pm.response.json().map(function (u) { return u.idUsuarioTi; });",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idUsuarioTi')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener usuario TI por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const usuario = pm.response.json();",
+									"",
+									"pm.test('Devuelve el usuario solicitado con sus fechas', function () {",
+									"    pm.expect(usuario.idUsuarioTi).to.eql(Number(pm.collectionVariables.get('idUsuarioTi')));",
+									"    pm.expect(usuario.fechaCreacion).to.be.a('string');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN - Primer inicio de sesión (contraseña = cédula)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const sesion = pm.response.json();",
+									"",
+									"pm.test('Devuelve la sesión del usuario TI', function () {",
+									"    pm.expect(sesion.idUsuarioTi).to.eql(Number(pm.collectionVariables.get('idUsuarioTi')));",
+									"    pm.expect(sesion.correo).to.eql(pm.collectionVariables.get('usuarioTiCorreo'));",
+									"    pm.expect(sesion.rol).to.eql('administrador');",
+									"});",
+									"",
+									"pm.test('Exige el cambio de contraseña inicial', function () {",
+									"    pm.expect(sesion.debeCambiarContrasena).to.eql(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreo}}\",\n  \"contrasena\": \"{{empleadoTiCedula}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Cambiar el correo del usuario TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const usuario = pm.response.json();",
+									"",
+									"pm.test('Actualiza el correo', function () {",
+									"    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get('usuarioTiCorreoEditado'));",
+									"});",
+									"",
+									"pm.test('Actualiza la fecha de modificación', function () {",
+									"    pm.expect(usuario.fechaActualizacion).to.be.a('string');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idEmpleado\": {{idEmpleadoTi}},\n  \"correo\": \"{{usuarioTiCorreoEditado}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN - El update no debe alterar la contraseña",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK con el correo nuevo', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().correo).to.eql(pm.collectionVariables.get('usuarioTiCorreoEditado'));",
+									"});",
+									"",
+									"pm.test('Se conserva el flag debeCambiarContrasena', function () {",
+									"    pm.expect(pm.response.json().debeCambiarContrasena).to.eql(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreoEditado}}\",\n  \"contrasena\": \"{{empleadoTiCedula}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH (error) - Confirmación que no coincide",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que la confirmación no coincide', function () {",
+									"    pm.expect(pm.response.json().message).to.include('La confirmacion no coincide');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contrasenaActual\": \"{{empleadoTiCedula}}\",\n  \"contrasenaNueva\": \"{{contrasenaNueva}}\",\n  \"confirmarContrasenaNueva\": \"OtraDistinta123*\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}/contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}",
+								"contrasena"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH (error) - Contraseña actual incorrecta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que la contraseña actual no es correcta', function () {",
+									"    pm.expect(pm.response.json().message).to.include('La contrasena actual no es correcta');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contrasenaActual\": \"0000000000\",\n  \"contrasenaNueva\": \"{{contrasenaNueva}}\",\n  \"confirmarContrasenaNueva\": \"{{contrasenaNueva}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}/contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}",
+								"contrasena"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH (error) - Contraseña nueva demasiado corta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Exige al menos 8 caracteres', function () {",
+									"    pm.expect(pm.response.json().message).to.include('al menos 8 caracteres');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contrasenaActual\": \"{{empleadoTiCedula}}\",\n  \"contrasenaNueva\": \"Qa1*\",\n  \"confirmarContrasenaNueva\": \"Qa1*\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}/contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}",
+								"contrasena"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH - Cambiar contraseña correctamente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test('No devuelve cuerpo', function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contrasenaActual\": \"{{empleadoTiCedula}}\",\n  \"contrasenaNueva\": \"{{contrasenaNueva}}\",\n  \"confirmarContrasenaNueva\": \"{{contrasenaNueva}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}/contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}",
+								"contrasena"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN - Con la contraseña nueva",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Ya no exige cambio de contraseña', function () {",
+									"    pm.expect(pm.response.json().debeCambiarContrasena).to.eql(false);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreoEditado}}\",\n  \"contrasena\": \"{{contrasenaNueva}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN (error) - La contraseña anterior ya no sirve",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Devuelve un mensaje genérico (no revela si el correo existe)', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Usuario o contraseña incorrectos');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreoEditado}}\",\n  \"contrasena\": \"{{empleadoTiCedula}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05 - Activos (CRUD)",
+			"description": "El backend filtra los campos de `detalle` según el `tipoActivo` (ver `ActivoUseCaseImpl.filtrarDetallePorTipo`): a una laptop solo le guarda procesador/RAM/almacenamiento/IP/dominio, a un móvil IMEI/línea/SO, etc.",
+			"item": [
+				{
+					"name": "CREATE - Crear laptop con detalle",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const activo = pm.response.json();",
+									"",
+									"pm.test('Devuelve el id y las marcas de tiempo', function () {",
+									"    pm.expect(activo.idActivo).to.be.a('number').and.to.be.above(0);",
+									"    pm.expect(activo.createdAt).to.be.a('string');",
+									"    pm.expect(activo.updatedAt).to.be.a('string');",
+									"});",
+									"",
+									"pm.test('Nace como OPERATIVO', function () {",
+									"    pm.expect(activo.estado).to.eql('OPERATIVO');",
+									"});",
+									"",
+									"pm.test('Guarda el detalle propio de una laptop', function () {",
+									"    pm.expect(activo.detalle).to.be.an('object');",
+									"    pm.expect(activo.detalle.procesador).to.eql('Intel Core i7 1355U');",
+									"    pm.expect(activo.detalle.ramGb).to.eql(16);",
+									"    pm.expect(activo.detalle.ip).to.eql(pm.collectionVariables.get('ipLaptop'));",
+									"});",
+									"",
+									"pm.test('Descarta los campos que no aplican al tipo laptop', function () {",
+									"    pm.expect(activo.detalle.imei).to.be.oneOf([null, undefined]);",
+									"    pm.expect(activo.detalle.modeloCabezal).to.be.oneOf([null, undefined]);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActivoLaptop', activo.idActivo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"{{codigoLaptop}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Lenovo\",\n  \"modelo\": \"ThinkPad T14 Gen 3\",\n  \"serial\": \"{{serialLaptop}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"observaciones\": \"Equipo de prueba creado por la\",\n  \"detalle\": {\n    \"procesador\": \"Intel Core i7 1355U\",\n    \"ramGb\": 16,\n    \"tipoAlmacenamiento\": \"SSD\",\n    \"almacenamientoGb\": 512,\n    \"ip\": \"{{ipLaptop}}\",\n    \"dominio\": \"{{dominioLaptop}}\",\n    \"imei\": \"\",\n    \"modeloCabezal\": \"NO APLICA\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						},
+						"description": "Se envían a propósito campos de otros tipos (imei, modeloCabezal) para comprobar que el backend los descarta."
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Crear dispositivo móvil con IMEI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const activo = pm.response.json();",
+									"",
+									"pm.test('Guarda el detalle propio de un dispositivo movil', function () {",
+									"    pm.expect(activo.detalle.imei).to.eql(pm.collectionVariables.get('imei'));",
+									"    pm.expect(activo.detalle.numeroLinea).to.eql(pm.collectionVariables.get('numeroLinea'));",
+									"});",
+									"",
+									"// Los accesorios se marcan al registrar el activo y salen como casillas",
+									"// en el acta (Cargador_Dispositivo_Movil / CableUSB_Dispositivo_Movil).",
+									"pm.test('Guarda los accesorios que acompanan al equipo', function () {",
+									"    pm.expect(activo.detalle.incluyeCargador).to.eql(true);",
+									"    pm.expect(activo.detalle.incluyeCableUsb).to.eql(false);",
+									"});",
+									"",
+									"pm.test('Descarta los campos que no aplican al tipo dispositivo_movil', function () {",
+									"    pm.expect(activo.detalle.procesador).to.be.oneOf([null, undefined]);",
+									"    pm.expect(activo.detalle.ip).to.be.oneOf([null, undefined]);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActivoMovil', activo.idActivo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"{{codigoMovil}}\",\n  \"tipoActivo\": \"dispositivo_movil\",\n  \"marca\": \"Samsung\",\n  \"modelo\": \"Galaxy A54\",\n  \"serial\": \"{{serialMovil}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"observaciones\": \"Movil corporativo de prueba\",\n  \"detalle\": {\n    \"tipoDispositivo\": \"Smartphone\",\n    \"sistemaOperativo\": \"Android 14\",\n    \"imei\": \"{{imei}}\",\n    \"numeroLinea\": \"{{numeroLinea}}\",\n    \"almacenamientoGb\": 128,\n    \"incluyeCargador\": true,\n    \"incluyeCableUsb\": false\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Crear periférico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const activo = pm.response.json();",
+									"",
+									"pm.test('Guarda solo el tipo de dispositivo', function () {",
+									"    pm.expect(activo.detalle.tipoDispositivo).to.eql('Teclado');",
+									"    pm.expect(activo.detalle.ramGb).to.be.oneOf([null, undefined]);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActivoPeriferico', activo.idActivo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"{{codigoPeriferico}}\",\n  \"tipoActivo\": \"periferico\",\n  \"marca\": \"Logitech\",\n  \"modelo\": \"MK270 Wireless\",\n  \"serial\": \"{{serialPeriferico}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"detalle\": {\n    \"tipoDispositivo\": \"Teclado\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Serial duplicado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa el serial duplicado', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe un activo con ese serial');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-DUP-{{sufijo}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Lenovo\",\n  \"modelo\": \"ThinkPad E14\",\n  \"serial\": \"{{serialLaptop}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Código de inventario duplicado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa el código duplicado', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe un activo con ese codigo de inventario');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"{{codigoLaptop}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Lenovo\",\n  \"modelo\": \"ThinkPad E14\",\n  \"serial\": \"SN-OTRO-{{sufijo}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - IMEI duplicado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa el IMEI duplicado', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe un activo con ese IMEI');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-IMEI-{{sufijo}}\",\n  \"tipoActivo\": \"dispositivo_movil\",\n  \"marca\": \"Samsung\",\n  \"modelo\": \"Galaxy A34\",\n  \"serial\": \"SN-IMEI-{{sufijo}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"detalle\": {\n    \"tipoDispositivo\": \"Smartphone\",\n    \"imei\": \"{{imei}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - IP duplicada entre activos operativos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa el conflicto de IP', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Ya existe un activo operativo con esa IP');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-IP-{{sufijo}}\",\n  \"tipoActivo\": \"desktop\",\n  \"marca\": \"HP\",\n  \"modelo\": \"ProDesk 400 G7\",\n  \"serial\": \"SN-IPD-{{sufijo}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"detalle\": {\n    \"procesador\": \"Intel Core i5\",\n    \"ramGb\": 8,\n    \"ip\": \"{{ipLaptop}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Estado inexistente rechazado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// ASIGNADO ya no es un estado del activo: a quien esta entregado se deriva",
+									"// del acta abierta, no se guarda en la tabla activos.",
+									"pm.test('Solo acepta las tres situaciones validas', function () {",
+									"    pm.expect(pm.response.json().message).to.include('OPERATIVO, DADO_DE_BAJA o ROBADO_PERDIDO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-ASG-{{sufijo}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Dell\",\n  \"modelo\": \"Latitude 3420\",\n  \"serial\": \"SN-ASG-{{sufijo}}\",\n  \"estado\": \"ASIGNADO\",\n  \"idOficina\": {{idOficina}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						},
+						"description": "ASIGNADO desaparecio como estado del activo: la entrega vive en el acta."
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Tipo, estado e IP inválidos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const mensaje = pm.response.json().message;",
+									"",
+									"pm.test('Reporta el tipo de activo inválido', function () {",
+									"    pm.expect(mensaje).to.include('tipo de activo');",
+									"});",
+									"",
+									"pm.test('Reporta la IP inválida', function () {",
+									"    pm.expect(mensaje).to.include('IPv4');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-BAD-{{sufijo}}\",\n  \"tipoActivo\": \"tablet\",\n  \"marca\": \"Dell\",\n  \"modelo\": \"Latitude 3420\",\n  \"serial\": \"SN-BAD-{{sufijo}}\",\n  \"estado\": \"EN_REPARACION\",\n  \"idOficina\": {{idOficina}},\n  \"detalle\": {\n    \"ip\": \"999.1.1.1\",\n    \"ramGb\": 9999\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Oficina inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que la oficina no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Oficina no encontrada');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-OFI-{{sufijo}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Dell\",\n  \"modelo\": \"Latitude 3420\",\n  \"serial\": \"SN-OFI-{{sufijo}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": 99999999\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Listar activos (con detalle embebido)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const lista = pm.response.json();",
+									"const idLaptop = Number(pm.collectionVariables.get('idActivoLaptop'));",
+									"const laptop = lista.find(function (a) { return a.idActivo === idLaptop; });",
+									"",
+									"pm.test('Incluye los 3 activos creados', function () {",
+									"    const ids = lista.map(function (a) { return a.idActivo; });",
+									"    pm.expect(ids).to.include(idLaptop);",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActivoMovil')));",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActivoPeriferico')));",
+									"});",
+									"",
+									"pm.test('El listado trae el detalle de cada activo', function () {",
+									"    pm.expect(laptop).to.be.an('object');",
+									"    pm.expect(laptop.detalle).to.be.an('object');",
+									"    pm.expect(laptop.detalle.procesador).to.eql('Intel Core i7 1355U');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener activo por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const activo = pm.response.json();",
+									"",
+									"pm.test('Devuelve el activo con su detalle', function () {",
+									"    pm.expect(activo.idActivo).to.eql(Number(pm.collectionVariables.get('idActivoLaptop')));",
+									"    pm.expect(activo.codigoInventario).to.eql(pm.collectionVariables.get('codigoLaptop'));",
+									"    pm.expect(activo.detalle.dominio).to.eql(pm.collectionVariables.get('dominioLaptop'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ (error) - Activo inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Activo no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/99999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"99999999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Actualizar laptop y su detalle",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const activo = pm.response.json();",
+									"",
+									"pm.test('Conserva el mismo id', function () {",
+									"    pm.expect(activo.idActivo).to.eql(Number(pm.collectionVariables.get('idActivoLaptop')));",
+									"});",
+									"",
+									"pm.test('Actualiza observaciones y RAM', function () {",
+									"    pm.expect(activo.observaciones).to.eql('Ampliacion de memoria RAM aplicada');",
+									"    pm.expect(activo.detalle.ramGb).to.eql(32);",
+									"});",
+									"",
+									"pm.test('Mantiene createdAt y refresca updatedAt', function () {",
+									"    pm.expect(activo.createdAt).to.be.a('string');",
+									"    pm.expect(new Date(activo.updatedAt).getTime()).to.be.at.least(new Date(activo.createdAt).getTime());",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"{{codigoLaptop}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Lenovo\",\n  \"modelo\": \"ThinkPad T14 Gen 3\",\n  \"serial\": \"{{serialLaptop}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"observaciones\": \"Ampliacion de memoria RAM apli\",\n  \"detalle\": {\n    \"procesador\": \"Intel Core i7 1355U\",\n    \"ramGb\": 32,\n    \"tipoAlmacenamiento\": \"SSD NVMe\",\n    \"almacenamientoGb\": 1024,\n    \"ip\": \"{{ipLaptop}}\",\n    \"dominio\": \"{{dominioLaptop}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						},
+						"description": "Reenviar la misma IP/serial/código no debe disparar los errores de unicidad (se excluye el propio registro)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "06 - Activo detalles (CRUD)",
+			"description": "Endpoint `/api/activo-detalles`. El detalle comparte PK con el activo (`idActivo`), por eso no existe un id propio.",
+			"item": [
+				{
+					"name": "READ - Listar detalles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Incluye el detalle del móvil creado', function () {",
+									"    const ids = pm.response.json().map(function (d) { return d.idActivo; });",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActivoMovil')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener detalle por idActivo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const detalle = pm.response.json();",
+									"",
+									"pm.test('Devuelve el detalle del móvil', function () {",
+									"    pm.expect(detalle.idActivo).to.eql(Number(pm.collectionVariables.get('idActivoMovil')));",
+									"    pm.expect(detalle.imei).to.eql(pm.collectionVariables.get('imei'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles/{{idActivoMovil}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles",
+								"{{idActivoMovil}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ (error) - Detalle inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('ActivoDetalle no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles/99999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles",
+								"99999999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Actualizar detalle del móvil",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const detalle = pm.response.json();",
+									"",
+									"pm.test('Actualiza el sistema operativo y el almacenamiento', function () {",
+									"    pm.expect(detalle.sistemaOperativo).to.eql('Android 15');",
+									"    pm.expect(detalle.almacenamientoGb).to.eql(256);",
+									"});",
+									"",
+									"pm.test('Sigue apuntando al mismo activo', function () {",
+									"    pm.expect(detalle.idActivo).to.eql(Number(pm.collectionVariables.get('idActivoMovil')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tipoDispositivo\": \"Smartphone\",\n  \"sistemaOperativo\": \"Android 15\",\n  \"imei\": \"{{imei}}\",\n  \"numeroLinea\": \"{{numeroLinea}}\",\n  \"almacenamientoGb\": 256\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles/{{idActivoMovil}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles",
+								"{{idActivoMovil}}"
+							]
+						},
+						"description": "Este endpoint escribe el detalle tal cual llega, sin el filtrado por tipo que aplica /api/activos."
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE (error) - IMEI con formato inválido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Exige 15 dígitos en el IMEI', function () {",
+									"    pm.expect(pm.response.json().message).to.include('15 dígitos');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tipoDispositivo\": \"Smartphone\",\n  \"imei\": \"12345\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles/{{idActivoMovil}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles",
+								"{{idActivoMovil}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Escribir detalle del periférico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Guarda el tipo de dispositivo enviado', function () {",
+									"    pm.expect(pm.response.json().tipoDispositivo).to.eql('Teclado y mouse inalambrico');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoPeriferico}},\n  \"tipoDispositivo\": \"Teclado y mouse inalambrico\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles"
+							]
+						},
+						"description": "El detalle comparte PK con el activo, así que el POST requiere un idActivo existente y se comporta como upsert."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Eliminar detalle del periférico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles/{{idActivoPeriferico}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles",
+								"{{idActivoPeriferico}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - El detalle eliminado ya no existe",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el detalle ya no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('ActivoDetalle no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activo-detalles/{{idActivoPeriferico}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activo-detalles",
+								"{{idActivoPeriferico}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "07 - Asignaciones y actas",
+			"description": "Flujo completo de la cadena de custodia: asignar → consultar → imprimir → devolver.",
+			"item": [
+				{
+					"name": "VERIFY - El activo nacio con acta de custodia (sin huerfanos)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const idActivo = Number(pm.collectionVariables.get('idActivoLaptop'));",
+									"const abiertas = pm.response.json().filter(function (a) {",
+									"    return a.idActivo === idActivo && ['custodia', 'activa'].indexOf(a.estadoAsignacion) !== -1;",
+									"});",
+									"",
+									"pm.test('Tiene exactamente un acta abierta', function () {",
+									"    pm.expect(abiertas).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test('Esa acta es de custodia de quien lo registro', function () {",
+									"    pm.expect(abiertas[0].estadoAsignacion).to.eql('custodia');",
+									"    pm.expect(abiertas[0].idUsuarioTi).to.eql(Number(pm.collectionVariables.get('idUsuarioTi')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas"
+							]
+						},
+						"description": "Al registrarse, el activo queda a cargo de quien lo creo. Nunca existe un activo operativo sin acta abierta."
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Asignar laptop al empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const acta = pm.response.json();",
+									"",
+									"pm.test('Genera el acta con estado activa', function () {",
+									"    pm.expect(acta.idActa).to.be.a('number').and.to.be.above(0);",
+									"    pm.expect(acta.estadoAsignacion).to.eql('activa');",
+									"    pm.expect(acta.fechaAsignacion).to.be.a('string');",
+									"    pm.expect(acta.fechaDevolucion).to.eql(null);",
+									"});",
+									"",
+									"pm.test('Vincula activo, empleado y usuario TI', function () {",
+									"    pm.expect(acta.idActivo).to.eql(Number(pm.collectionVariables.get('idActivoLaptop')));",
+									"    pm.expect(acta.idEmpleado).to.eql(Number(pm.collectionVariables.get('idEmpleado')));",
+									"    pm.expect(acta.idUsuarioTi).to.eql(Number(pm.collectionVariables.get('idUsuarioTi')));",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActa', acta.idActa);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoLaptop}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Entrega de equipo por ingreso a la institucion\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El activo sigue OPERATIVO tras la entrega",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// La situacion del activo no cambia al entregarlo: lo que cambia es cual",
+									"// es su acta abierta (de custodia paso a entrega).",
+									"pm.test('La entrega no altera la situacion del activo', function () {",
+									"    pm.expect(pm.response.json().estado).to.eql('OPERATIVO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Asignar un activo ya asignado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el activo ya está asignado', function () {",
+									"    pm.expect(pm.response.json().message).to.include('ya esta entregado a un empleado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoLaptop}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Intento de doble asignacion\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE (error) - No se puede desactivar un empleado con activos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Exige devolver los activos primero', function () {",
+									"    pm.expect(pm.response.json().message).to.include('aun tiene activos asignados');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{empleadoNombre}}\",\n  \"apellido\": \"{{empleadoApellido}}\",\n  \"cedula\": \"{{empleadoCedula}}\",\n  \"correo\": \"{{empleadoCorreo}}\",\n  \"extensionTelefonica\": \"2075\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"rol\": \"usuario\",\n  \"activo\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados/{{idEmpleado}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"{{idEmpleado}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Asignar a un empleado inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el empleado no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Empleado no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoMovil}},\n  \"idEmpleado\": 99999999,\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Empleado inexistente\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Asignar sin campos obligatorios",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Reporta los campos obligatorios', function () {",
+									"    pm.expect(pm.response.json().message).to.include('obligatorio');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"motivo\": \"Sin ids\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Asignar el móvil al mismo empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const acta = pm.response.json();",
+									"",
+									"pm.test('El acta queda activa', function () {",
+									"    pm.expect(acta.estadoAsignacion).to.eql('activa');",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActaMovil', acta.idActa);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoMovil}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Entrega de movil corporativo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						},
+						"description": "Segunda asignación al mismo empleado, necesaria para probar /devolver-todo-empleado."
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Listar actas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const ids = pm.response.json().map(function (a) { return a.idActa; });",
+									"",
+									"pm.test('Incluye las dos actas creadas', function () {",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActa')));",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActaMovil')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Obtener acta por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const acta = pm.response.json();",
+									"",
+									"pm.test('Devuelve el acta solicitada con su motivo', function () {",
+									"    pm.expect(acta.idActa).to.eql(Number(pm.collectionVariables.get('idActa')));",
+									"    pm.expect(acta.motivo).to.include('Entrega de equipo');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActa}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActa}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ (error) - Acta inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Acta no encontrada');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/99999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"99999999"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Crear impresora termica",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Guarda los accesorios de la impresora', function () {",
+									"    const detalle = pm.response.json().detalle;",
+									"    pm.expect(detalle.incluyeCargador).to.eql(true);",
+									"    pm.expect(detalle.incluyeCableUsb).to.eql(true);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActivoImpresora', pm.response.json().idActivo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-IMP-{{sufijo}}\",\n  \"tipoActivo\": \"impresora_termica\",\n  \"marca\": \"Epson\",\n  \"modelo\": \"TM P20\",\n  \"serial\": \"SN-IMP-{{sufijo}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}},\n  \"observaciones\": \"Bateria al 80 por ciento\",\n  \"detalle\": {\n    \"tipoConexion\": \"Bluetooth\",\n    \"modeloCabezal\": \"TMP-20H\",\n    \"estadoBateria\": \"Buena\",\n    \"incluyeCargador\": true,\n    \"incluyeCableUsb\": true\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Asignar la impresora al mismo empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActaImpresora', pm.response.json().idActa);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoImpresora}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Impresora para cobros en campo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "READ - Actas imprimibles del empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const ids = pm.response.json();",
+									"",
+									"pm.test('Devuelve un arreglo de ids de acta', function () {",
+									"    pm.expect(ids).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Incluye el acta del movil', function () {",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActaMovil')));",
+									"});",
+									"",
+									"// La hoja de moviles tiene hueco para un movil y una impresora: la",
+									"// impresora viaja embebida en el acta del movil en vez de generar una",
+									"// segunda hoja con la mitad vacia.",
+									"pm.test('NO incluye el acta de la impresora: va embebida en la del movil', function () {",
+									"    pm.expect(ids).to.not.include(Number(pm.collectionVariables.get('idActaImpresora')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/imprimibles-empleado/{{idEmpleado}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"imprimibles-empleado",
+								"{{idEmpleado}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ARCHIVAR - Acta individual en disco",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 (archivada) o 400 (plantilla no disponible)', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const r = pm.response.json();",
+									"    pm.test('Informa donde quedo guardada el acta', function () {",
+									"        pm.expect(r.rutas).to.be.an('array').that.is.not.empty;",
+									"        pm.expect(r.cantidad).to.eql(r.rutas.length);",
+									"        pm.expect(r.carpeta).to.be.a('string').and.not.empty;",
+									"    });",
+									"",
+									"    pm.test('Las rutas apuntan a archivos PDF', function () {",
+									"        r.rutas.forEach(function (ruta) { pm.expect(ruta).to.match(/\\.pdf$/i); });",
+									"    });",
+									"} else {",
+									"    console.log('Acta no archivada: ' + pm.response.text());",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActa}}/archivar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActa}}",
+								"archivar"
+							]
+						},
+						"description": "Requiere las plantillas PDF en `backend/plantillas/actas` (propiedad `app.actas.plantillas-dir`).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"observacion\": \"Entregado en buen estado y completo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ARCHIVAR - Todas las actas del empleado en disco",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 (archivada) o 400 (plantilla no disponible)', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const r = pm.response.json();",
+									"    pm.test('Informa donde quedo guardada el acta', function () {",
+									"        pm.expect(r.rutas).to.be.an('array').that.is.not.empty;",
+									"        pm.expect(r.cantidad).to.eql(r.rutas.length);",
+									"        pm.expect(r.carpeta).to.be.a('string').and.not.empty;",
+									"    });",
+									"",
+									"    pm.test('Las rutas apuntan a archivos PDF', function () {",
+									"        r.rutas.forEach(function (ruta) { pm.expect(ruta).to.match(/\\.pdf$/i); });",
+									"    });",
+									"} else {",
+									"    console.log('Acta no archivada: ' + pm.response.text());",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas/imprimibles-empleado/{{idEmpleado}}/archivar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"imprimibles-empleado",
+								"{{idEmpleado}}",
+								"archivar"
+							]
+						},
+						"description": "Las actas no se abren en el navegador: se guardan en su carpeta y la respuesta trae la ruta.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"observacion\": \"Entregado en buen estado y completo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Devolver la laptop",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const acta = pm.response.json();",
+									"",
+									"pm.test('El acta pasa a devuelta con fecha de devolución', function () {",
+									"    pm.expect(acta.estadoAsignacion).to.eql('devuelta');",
+									"    pm.expect(acta.fechaDevolucion).to.be.a('string');",
+									"});",
+									"",
+									"pm.test('Acumula el motivo de devolución sobre el de entrega', function () {",
+									"    pm.expect(acta.motivo).to.include('Entrega de equipo');",
+									"    pm.expect(acta.motivo).to.include('Devolucion: Fin de contrato');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Fin de contrato\",\n  \"observacion\": \"Recibido sin novedad\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActa}}/devolver",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActa}}",
+								"devolver"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El activo sigue OPERATIVO tras la devolucion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('El activo queda libre para una nueva asignación', function () {",
+									"    pm.expect(pm.response.json().estado).to.eql('OPERATIVO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - Tras devolver, el activo vuelve a custodia de TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const idActivo = Number(pm.collectionVariables.get('idActivoLaptop'));",
+									"const abiertas = pm.response.json().filter(function (a) {",
+									"    return a.idActivo === idActivo && ['custodia', 'activa'].indexOf(a.estadoAsignacion) !== -1;",
+									"});",
+									"",
+									"pm.test('Sigue habiendo exactamente un acta abierta', function () {",
+									"    pm.expect(abiertas).to.have.lengthOf(1);",
+									"});",
+									"",
+									"pm.test('Y es de custodia, a nombre de quien recibio', function () {",
+									"    pm.expect(abiertas[0].estadoAsignacion).to.eql('custodia');",
+									"    pm.expect(abiertas[0].idUsuarioTi).to.eql(Number(pm.collectionVariables.get('idUsuarioTi')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas"
+							]
+						},
+						"description": "La devolucion cierra el acta del empleado y abre una de custodia a nombre de quien recibe: el activo no queda huerfano entre dos entregas."
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE (error) - Devolver dos veces la misma acta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que ya no hay asignación activa', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Este activo no tiene una asignacion activa');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Segundo intento de devolucion\",\n  \"observacion\": \"Recibido sin novedad\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActa}}/devolver",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActa}}",
+								"devolver"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Devolver todos los activos del empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const actas = pm.response.json();",
+									"",
+									"pm.test('Devuelve el acta del móvil que seguía activa', function () {",
+									"    pm.expect(actas).to.be.an('array').that.is.not.empty;",
+									"    const ids = actas.map(function (a) { return a.idActa; });",
+									"    pm.expect(ids).to.include(Number(pm.collectionVariables.get('idActaMovil')));",
+									"});",
+									"",
+									"pm.test('Todas las actas devueltas quedan en estado devuelta', function () {",
+									"    actas.forEach(function (a) { pm.expect(a.estadoAsignacion).to.eql('devuelta'); });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"motivo\": \"Salida de la institucion\",\n  \"observacion\": \"Recibido sin novedad\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/devolver-todo-empleado",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"devolver-todo-empleado"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Devolver todo de un empleado sin activos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Devuelve un arreglo vacío (no hay asignaciones activas)', function () {",
+									"    pm.expect(pm.response.json()).to.be.an('array').that.is.empty;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"motivo\": \"Ya no tiene activos\",\n  \"observacion\": \"Recibido sin novedad\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/devolver-todo-empleado",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"devolver-todo-empleado"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Activo extra para probar el robo con entrega activa",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActivoExtra', pm.response.json().idActivo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-ROB-{{sufijo}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Acer\",\n  \"modelo\": \"TravelMate P2\",\n  \"serial\": \"SN-ROB-{{sufijo}}\",\n  \"estado\": \"OPERATIVO\",\n  \"idOficina\": {{idOficina}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Asignar el activo extra al empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.collectionVariables.set('idActaExtra', pm.response.json().idActa);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoExtra}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Entrega para prueba de robo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Reportar robado un activo entregado a un empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK: ya no exige devolver primero', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Queda como robado/perdido', function () {",
+									"    pm.expect(pm.response.json().estado).to.eql('ROBADO_PERDIDO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoExtra}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoExtra}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"codigoInventario\": \"INV-ROB-{{sufijo}}\",\n  \"tipoActivo\": \"laptop\",\n  \"marca\": \"Acer\",\n  \"modelo\": \"TravelMate P2\",\n  \"serial\": \"SN-ROB-{{sufijo}}\",\n  \"estado\": \"ROBADO_PERDIDO\",\n  \"idOficina\": {{idOficina}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "Antes habia que simular una devolucion que nunca ocurrio. Ahora el cambio de situacion cierra por si mismo el acta de entrega."
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El robo cerro el acta de entrega",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('El acta quedo cerrada sin pasar por una devolucion falsa', function () {",
+									"    const acta = pm.response.json();",
+									"    pm.expect(acta.estadoAsignacion).to.eql('devuelta');",
+									"    pm.expect(acta.motivo).to.include('ROBADO_PERDIDO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActaExtra}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActaExtra}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Desactivar al empleado ya sin activos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Ahora sí permite desactivarlo', function () {",
+									"    pm.expect(pm.response.json().activo).to.eql(false);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"{{empleadoNombre}}\",\n  \"apellido\": \"{{empleadoApellido}}\",\n  \"cedula\": \"{{empleadoCedula}}\",\n  \"correo\": \"{{empleadoCorreo}}\",\n  \"extensionTelefonica\": \"2075\",\n  \"idOficina\": {{idOficina}},\n  \"idCargo\": {{idCargo}},\n  \"rol\": \"usuario\",\n  \"activo\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/empleados/{{idEmpleado}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"{{idEmpleado}}"
+							]
+						},
+						"description": "Contrapartida positiva de la regla probada antes: sin activos asignados, la desactivación procede."
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Asignar a un empleado inactivo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el empleado no está activo', function () {",
+									"    pm.expect(pm.response.json().message).to.include('El empleado no esta activo');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idActivo\": {{idActivoLaptop}},\n  \"idEmpleado\": {{idEmpleado}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Empleado desactivado\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/actas/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"asignar"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "07b - Grupos de activos",
+			"item": [
+				{
+					"name": "CREATE - Crear grupo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const grupo = pm.response.json();",
+									"pm.test('Nace vacio y con id', function () {",
+									"    pm.expect(grupo.idGrupo).to.be.a('number').and.to.be.above(0);",
+									"    pm.expect(grupo.estado).to.eql('VACIO');",
+									"    pm.expect(grupo.activos).to.be.an('array').that.is.empty;",
+									"});",
+									"pm.collectionVariables.set('idGrupo', grupo.idGrupo);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/grupos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"Grupo {{sufijo}}\",\n  \"descripcion\": \"Puesto de prueba\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Nombre de grupo duplicado con otra capitalizacion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test('Explica que el nombre ya existe', function () {",
+									"    pm.expect(pm.response.json().message).to.eql('Ya existe un grupo con ese nombre');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/grupos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombre\": \"GRUPO {{sufijo}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Agregar laptop y periferico al grupo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const grupo = pm.response.json();",
+									"pm.test('El grupo tiene 2 activos y esta en bodega', function () {",
+									"    pm.expect(grupo.activos).to.have.lengthOf(2);",
+									"    pm.expect(grupo.estado).to.eql('EN_BODEGA');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}",
+								"activos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idsActivos\": [{{idActivoLaptop}}, {{idActivoPeriferico}}]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE (error) - Agregar al grupo un activo robado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test('Indica el motivo del rechazo', function () {",
+									"    pm.expect(pm.response.json().message).to.include('robado/perdido');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}/activos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}",
+								"activos"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idsActivos\": [{{idActivoExtra}}]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El activo muestra su grupo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Incluye id y nombre del grupo', function () {",
+									"    const activo = pm.response.json();",
+									"    pm.expect(activo.idGrupo).to.eql(Number(pm.collectionVariables.get('idGrupo')));",
+									"    pm.expect(activo.nombreGrupo).to.eql('Grupo ' + pm.collectionVariables.get('sufijo'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE - Asignar el grupo al empleado de TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"const actas = pm.response.json();",
+									"pm.test('Crea un acta de entrega por activo', function () {",
+									"    pm.expect(actas).to.have.lengthOf(2);",
+									"    actas.forEach(function (acta) {",
+									"        pm.expect(acta.estadoAsignacion).to.eql('activa');",
+									"        pm.expect(acta.observacion).to.eql('Puesto completo');",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}",
+								"asignar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idEmpleado\": {{idEmpleadoTi}},\n  \"idUsuarioTi\": {{idUsuarioTi}},\n  \"motivo\": \"Prueba de grupo\",\n  \"observacion\": \"Puesto completo\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"description": "Se asigna al empleado de TI porque el empleado de prueba ya fue desactivado en 07."
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El grupo queda ASIGNADO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Estado ASIGNADO al empleado de TI', function () {",
+									"    const grupo = pm.response.json();",
+									"    pm.expect(grupo.estado).to.eql('ASIGNADO');",
+									"    pm.expect(grupo.idEmpleadoAsignado).to.eql(Number(pm.collectionVariables.get('idEmpleadoTi')));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE (error) - Asignar un grupo ya asignado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test('Lista los activos que lo impiden', function () {",
+									"    pm.expect(pm.response.json().message).to.include('No se puede asignar el grupo');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}/asignar",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}",
+								"asignar"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idEmpleado\": {{idEmpleadoTi}},\n  \"idUsuarioTi\": {{idUsuarioTi}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE - Devolver todo del empleado de TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/actas/devolver-todo-empleado",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"devolver-todo-empleado"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idEmpleado\": {{idEmpleadoTi}},\n  \"idUsuarioTi\": {{idUsuarioTi}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El grupo vuelve a EN_BODEGA",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Estado EN_BODEGA', function () {",
+									"    pm.expect(pm.response.json().estado).to.eql('EN_BODEGA');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Quitar el periferico del grupo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Queda un solo activo', function () {",
+									"    pm.expect(pm.response.json().activos).to.have.lengthOf(1);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}/activos/{{idActivoPeriferico}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}",
+								"activos",
+								"{{idActivoPeriferico}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Eliminar el grupo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/grupos/{{idGrupo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"grupos",
+								"{{idGrupo}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - La laptop queda sin grupo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 OK', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('idGrupo vuelve a null', function () {",
+									"    pm.expect(pm.response.json().idGrupo).to.be.oneOf([null, undefined]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Grupos fijos de activos que se asignan completos (todo o nada). Deja el grupo eliminado y los activos en bodega."
+		},
+		{
+			"name": "08 - Auth y recuperación de contraseña",
+			"item": [
+				{
+					"name": "LOGIN (error) - Credenciales inexistentes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('No revela si el correo existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Usuario o contraseña incorrectos');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"nadie.{{sufijo}}@coopcentro.test\",\n  \"contrasena\": \"ContrasenaFalsa123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN (error) - Campos vacíos o mal formados",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"const mensaje = pm.response.json().message;",
+									"",
+									"pm.test('Reporta el correo con formato inválido', function () {",
+									"    pm.expect(mensaje).to.include('correo electrónico válido');",
+									"});",
+									"",
+									"pm.test('Reporta la contraseña obligatoria', function () {",
+									"    pm.expect(mensaje).to.include('obligatorio');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"no-es-correo\",\n  \"contrasena\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN (error) - Usuario TI de un empleado inactivo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 200 (empleado TI activo) según el estado del empleado', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"if (pm.response.code === 400) {",
+									"    pm.test('Bloquea el acceso del empleado inactivo', function () {",
+									"        pm.expect(pm.response.json().message).to.include('Empleado sin acceso a la plataforma');",
+									"    });",
+									"} else {",
+									"    pm.test('El empleado de TI sigue activo, por eso el login procede', function () {",
+									"        pm.expect(pm.response.json().rol).to.eql('administrador');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreoEditado}}\",\n  \"contrasena\": \"{{contrasenaNueva}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Documenta la regla `Empleado sin acceso a la plataforma`: el usuario TI de esta corrida pertenece a un empleado activo, por lo que aquí el login procede."
+					},
+					"response": []
+				},
+				{
+					"name": "RECUPERACIÓN - Solicitar con un correo inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test('No revela que el correo no existe (respuesta idéntica al caso válido)', function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"desconocido.{{sufijo}}@coopcentro.test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/solicitar-recuperacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"solicitar-recuperacion"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RECUPERACIÓN - Solicitar con el correo del usuario TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreoEditado}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/solicitar-recuperacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"solicitar-recuperacion"
+							]
+						},
+						"description": "⚠️ ATENCIÓN: este endpoint intenta ENVIAR UN CORREO REAL vía Microsoft Graph al buzón indicado y genera un token de recuperación válido por 30 minutos. El correo de esta colección es ficticio (`@coopcentro.test`), así que el envío fallará y quedará solo registrado en el log del backend. Omite esta petición si no quieres generar tráfico de correo en tu tenant."
+					},
+					"response": []
+				},
+				{
+					"name": "RESTABLECER (error) - Token inválido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el enlace no es válido', function () {",
+									"    pm.expect(pm.response.json().message).to.include('El enlace de recuperacion no es valido');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"token-inventado-que-no-existe\",\n  \"contrasenaNueva\": \"NuevaClave2026*\",\n  \"confirmarContrasenaNueva\": \"NuevaClave2026*\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/restablecer-contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"restablecer-contrasena"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RESTABLECER (error) - Confirmación distinta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que la confirmación no coincide', function () {",
+									"    pm.expect(pm.response.json().message).to.include('La confirmacion no coincide');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"token-inventado-que-no-existe\",\n  \"contrasenaNueva\": \"NuevaClave2026*\",\n  \"confirmarContrasenaNueva\": \"OtraClave2026*\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/restablecer-contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"restablecer-contrasena"
+							]
+						},
+						"description": "La validación de confirmación corre antes de buscar el token, por eso este es el mensaje esperado."
+					},
+					"response": []
+				},
+				{
+					"name": "RESTABLECER (error) - Contraseña menor a 8 caracteres",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Exige al menos 8 caracteres', function () {",
+									"    pm.expect(pm.response.json().message).to.include('al menos 8 caracteres');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"token-inventado-que-no-existe\",\n  \"contrasenaNueva\": \"Corta1\",\n  \"confirmarContrasenaNueva\": \"Corta1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/restablecer-contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"restablecer-contrasena"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RESTABLECER (error) - Campos obligatorios vacíos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Reporta los campos obligatorios', function () {",
+									"    pm.expect(pm.response.json().message).to.include('obligatorio');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"\",\n  \"contrasenaNueva\": \"\",\n  \"confirmarContrasenaNueva\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/restablecer-contrasena",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"restablecer-contrasena"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "09 - Limpieza (DELETE en cascada manual)",
+			"description": "Borra todo lo creado respetando las claves foráneas: actas → activos → usuario TI → empleados → cargo → oficina.",
+			"item": [
+				{
+					"name": "DELETE - Acta de la laptop",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActa}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActa}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Acta del móvil",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActaMovil}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActaMovil}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El acta borrada ya no existe",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el acta no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Acta no encontrada');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actas/{{idActa}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actas",
+								"{{idActa}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Laptop",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						},
+						"description": "El detalle asociado se borra en cascada (FK con ON DELETE CASCADE)."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Dispositivo móvil",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoMovil}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoMovil}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Periférico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoPeriferico}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoPeriferico}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El activo borrado y su detalle ya no existen",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que el activo no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Activo no encontrado');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/activos/{{idActivoLaptop}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"activos",
+								"{{idActivoLaptop}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Usuario TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/usuarios-ti/{{idUsuarioTi}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"usuarios-ti",
+								"{{idUsuarioTi}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - El login del usuario borrado falla",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Ya no hay credenciales válidas', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Usuario o contraseña incorrectos');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"correo\": \"{{usuarioTiCorreoEditado}}\",\n  \"contrasena\": \"{{contrasenaNueva}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Empleado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/empleados/{{idEmpleado}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"{{idEmpleado}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Empleado de TI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/empleados/{{idEmpleadoTi}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"empleados",
+								"{{idEmpleadoTi}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Cargo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cargos/{{idCargo}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cargos",
+								"{{idCargo}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE - Oficina",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oficinas/{{idOficina}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas",
+								"{{idOficina}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VERIFY - La oficina borrada ya no existe",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Responde 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Informa que la oficina no existe', function () {",
+									"    pm.expect(pm.response.json().message).to.include('Oficina no encontrada');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/oficinas/{{idOficina}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"oficinas",
+								"{{idOficina}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -12,7 +12,7 @@ const FILAS_POR_PAGINA = 10;
 const VACIO = '—';
 const COLUMNAS = [
   'N°', 'Código', 'Tipo', 'Marca', 'Modelo', 'Serial', 'Custodio', 'Custodia',
-  'Procesador', 'RAM (GB)', 'Almac. (GB)', 'IP', 'Dominio',
+  'Procesador', 'RAM (GB)', 'Almac. (GB)', 'IP', 'Hostname',
 ];
 
 /**

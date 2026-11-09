@@ -66,6 +66,17 @@ public class ActivoRequestDto {
 	@Size(max = 30, message = "no debe superar 30 caracteres")
 	private String observaciones;
 
+	// Descripcion libre del estado fisico del equipo. Es opcional y NO se
+	// imprime en el acta (no cabe en la plantilla), por eso admite mas texto.
+	@Size(min = 3, max = 250, message = "debe tener entre 3 y 250 caracteres")
+	private String descripcionEstado;
+
+	/** Un texto vacio o en blanco significa "sin descripcion", no un error. */
+	public void setDescripcionEstado(String descripcionEstado) {
+		this.descripcionEstado = descripcionEstado == null || descripcionEstado.isBlank() ? null
+				: descripcionEstado.trim();
+	}
+
 	@Valid
 	private ActivoDetalleRequestDto detalle;
 

@@ -10,6 +10,7 @@ import com.uisrael.inventario.infraestructura.persistencia.jpa.ActivoEntity;
 public interface IActivoJpaRepositorio extends JpaRepository<ActivoEntity, Integer> {
 	List<ActivoEntity> findByTipoActivo(String tipoActivo);
 	List<ActivoEntity> findByEstado(String estado);
+	List<ActivoEntity> findByGrupoIdGrupo(int idGrupo);
 	Optional<ActivoEntity> findBySerial(String serial);
 	Optional<ActivoEntity> findByCodigoInventario(String codigoInventario);
 }

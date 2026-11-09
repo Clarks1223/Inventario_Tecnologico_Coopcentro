@@ -47,6 +47,11 @@ public class ActivoRepositorioImpl implements IActivoRepositorio {
 	}
 
 	@Override
+	public List<Activo> listarPorGrupo(int idGrupo) {
+		return jpaRepositorio.findByGrupoIdGrupo(idGrupo).stream().map(entityMapper::toDomain).toList();
+	}
+
+	@Override
 	public void eliminar(int idActivo) {
 		jpaRepositorio.deleteById(idActivo);
 	}

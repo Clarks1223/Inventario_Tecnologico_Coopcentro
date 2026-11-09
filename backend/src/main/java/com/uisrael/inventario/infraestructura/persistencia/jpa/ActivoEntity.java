@@ -47,8 +47,15 @@ public class ActivoEntity {
 	@JoinColumn(name = "id_oficina", foreignKey = @ForeignKey(name = "fk_activos_id_oficina_oficinas"))
 	private OficinaEntity oficina;
 
+	@ManyToOne
+	@JoinColumn(name = "id_grupo", foreignKey = @ForeignKey(name = "fk_activos_id_grupo_grupos_activos"))
+	private GrupoActivosEntity grupo;
+
 	@Column(name = "observaciones", columnDefinition = "TEXT")
 	private String observaciones;
+
+	@Column(name = "descripcion_estado", length = 250)
+	private String descripcionEstado;
 
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;

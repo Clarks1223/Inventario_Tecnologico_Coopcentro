@@ -29,6 +29,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
@@ -40,8 +42,14 @@ import { useSession } from '../hooks/useSession';
 import PageHeader from '../components/ui/PageHeader';
 import ComentarioActaDialog from '../components/ui/ComentarioActaDialog';
 import { TIPO_ACTIVO_OPTIONS } from '../constants/activosConstants';
+import { esAsignable, etiquetaEstadoGrupo } from '../utils/grupos';
+import { filtrarActivosPorTexto } from '../utils/filtrarActivos';
 
 const MAX_EMPLEADOS_VISIBLES = 100;
+
+// Modos del diálogo de asignación: activos sueltos o un grupo completo.
+const MODO_ACTIVOS = 'activos';
+const MODO_GRUPO = 'grupo';
 
 // El comentario del acta ya no se pide aquí: se pide en cada acción que genera
 // un documento (imprimir o devolver), que es donde se sabe qué acta lleva qué.
@@ -70,6 +78,8 @@ const Asignaciones = () => {
     open,
     setOpen,
     handleAssign,
+    grupos,
+    handleAssignGrupo,
     accionActaAbierta,
     accionActaActual,
     iniciarAccionActa,
@@ -80,7 +90,23 @@ const Asignaciones = () => {
   const { sesion } = useSession();
   const [form, setForm] = useState(emptyForm);
   const [tipoActivoDialogo, setTipoActivoDialogo] = useState('');
+  const [modoDialogo, setModoDialogo] = useState(MODO_ACTIVOS);
+  const [idGrupoElegido, setIdGrupoElegido] = useState(null);
+  const [asignandoGrupo, setAsignandoGrupo] = useState(false);
   const dialogoPantallaCompleta = useDialogFullScreen();
+
+  const gruposOrdenados = [...grupos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const grupoElegido = grupos.find((g) => g.id_grupo === idGrupoElegido) || null;
+  const activosDelGrupo = grupoElegido?.activos || [];
+
+  const asignarGrupo = async () => {
+    setAsignandoGrupo(true);
+    try {
+      await handleAssignGrupo({ id_grupo: idGrupoElegido });
+    } finally {
+      setAsignandoGrupo(false);
+    }
+  };
 
   const empleadosVisibles = empleadosFiltrados.slice(0, MAX_EMPLEADOS_VISIBLES);
   const empleadosOcultos = empleadosFiltrados.length - empleadosVisibles.length;
@@ -93,20 +119,11 @@ const Asignaciones = () => {
     form.ids_activos.includes(a.id_activo)
   );
 
-  // Busca en todos los campos visibles, no solo en el serial.
-  const filtrarActivos = (options, { inputValue }) => {
-    const texto = inputValue.trim().toLowerCase();
-    if (!texto) return options;
-    return options.filter((a) =>
-      [a.serial, a.codigo_inventario, a.marca, a.modelo, a.tipo_activo]
-        .filter(Boolean)
-        .some((campo) => String(campo).toLowerCase().includes(texto))
-    );
-  };
-
   const openDialog = () => {
     setForm(emptyForm);
     setTipoActivoDialogo('');
+    setModoDialogo(MODO_ACTIVOS);
+    setIdGrupoElegido(null);
     setOpen(true);
   };
 
@@ -341,91 +358,184 @@ const Asignaciones = () => {
               {empleadoActual.cedula}) · Procesado por: {sesion?.nombre} {sesion?.apellido}
             </Typography>
           )}
-          <FormControl size="small" fullWidth sx={{ mb: 1 }}>
-            <InputLabel>Tipo de activo</InputLabel>
-            <Select
-              value={tipoActivoDialogo}
-              label="Tipo de activo"
-              onChange={(e) => {
-                setTipoActivoDialogo(e.target.value);
-                setForm({ ...form, ids_activos: [] });
-              }}
-            >
-              <MenuItem value="">
-                <em>Todos</em>
-              </MenuItem>
-              {TIPO_ACTIVO_OPTIONS.map((tipo) => (
-                <MenuItem key={tipo.value} value={tipo.value}>
-                  {tipo.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Autocomplete
-            multiple
-            disableCloseOnSelect
-            options={activosParaAsignar}
-            value={activosElegidos}
-            getOptionLabel={(option) => option.serial || ''}
-            isOptionEqualToValue={(option, value) => option.id_activo === value.id_activo}
-            filterOptions={filtrarActivos}
-            onChange={(event, newValue) =>
-              setForm({ ...form, ids_activos: newValue.map((a) => a.id_activo) })
-            }
-            noOptionsText="Ningún activo disponible coincide"
-            renderOption={(props, option, { selected }) => {
-              const { key, ...otros } = props;
-              return (
-                <li key={key} {...otros}>
-                  <Checkbox size="small" checked={selected} sx={{ mr: 1 }} />
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="body2" noWrap>
-                      {option.serial} · {option.tipo_activo}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" noWrap component="div">
-                      {[option.marca, option.modelo].filter(Boolean).join(' ')}
-                      {option.codigo_inventario ? ` · ${option.codigo_inventario}` : ''}
-                    </Typography>
-                  </Box>
-                </li>
-              );
+          <ToggleButtonGroup
+            exclusive
+            fullWidth
+            size="small"
+            color="primary"
+            value={modoDialogo}
+            onChange={(event, modo) => {
+              if (modo) setModoDialogo(modo);
             }}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => {
-                const { key, ...otros } = getTagProps({ index });
-                return <Chip key={key} size="small" label={option.serial} {...otros} />;
-              })
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Activos disponibles"
-                placeholder="Escribe el serial, código, marca o modelo"
-                margin="dense"
-                fullWidth
+            aria-label="Forma de asignar"
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value={MODO_ACTIVOS}>Por activos</ToggleButton>
+            <ToggleButton value={MODO_GRUPO}>Por grupo</ToggleButton>
+          </ToggleButtonGroup>
+          {modoDialogo === MODO_ACTIVOS ? (
+            <>
+              <FormControl size="small" fullWidth sx={{ mb: 1 }}>
+                <InputLabel>Tipo de activo</InputLabel>
+                <Select
+                  value={tipoActivoDialogo}
+                  label="Tipo de activo"
+                  onChange={(e) => {
+                    setTipoActivoDialogo(e.target.value);
+                    setForm({ ...form, ids_activos: [] });
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>Todos</em>
+                  </MenuItem>
+                  {TIPO_ACTIVO_OPTIONS.map((tipo) => (
+                    <MenuItem key={tipo.value} value={tipo.value}>
+                      {tipo.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Autocomplete
+                multiple
+                disableCloseOnSelect
+                options={activosParaAsignar}
+                value={activosElegidos}
+                getOptionLabel={(option) => option.serial || ''}
+                isOptionEqualToValue={(option, value) => option.id_activo === value.id_activo}
+                filterOptions={filtrarActivosPorTexto}
+                onChange={(event, newValue) =>
+                  setForm({ ...form, ids_activos: newValue.map((a) => a.id_activo) })
+                }
+                noOptionsText="Ningún activo disponible coincide"
+                renderOption={(props, option, { selected }) => {
+                  const { key, ...otros } = props;
+                  return (
+                    <li key={key} {...otros}>
+                      <Checkbox size="small" checked={selected} sx={{ mr: 1 }} />
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="body2" noWrap>
+                          {option.serial} · {option.tipo_activo}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div">
+                          {[option.marca, option.modelo].filter(Boolean).join(' ')}
+                          {option.codigo_inventario ? ` · ${option.codigo_inventario}` : ''}
+                        </Typography>
+                      </Box>
+                    </li>
+                  );
+                }}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => {
+                    const { key, ...otros } = getTagProps({ index });
+                    return <Chip key={key} size="small" label={option.serial} {...otros} />;
+                  })
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Activos disponibles"
+                    placeholder="Escribe el serial, código, marca o modelo"
+                    margin="dense"
+                    fullWidth
+                  />
+                )}
               />
-            )}
-          />
-          {activosElegidos.length > 0 && empleadoActual && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Se asignarán <b>{activosElegidos.length}</b>{' '}
-              {activosElegidos.length === 1 ? 'activo' : 'activos'} a{' '}
-              <b>
-                {empleadoActual.nombre} {empleadoActual.apellido}
-              </b>
-              .
-            </Typography>
+              {activosElegidos.length > 0 && empleadoActual && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Se asignarán <b>{activosElegidos.length}</b>{' '}
+                  {activosElegidos.length === 1 ? 'activo' : 'activos'} a{' '}
+                  <b>
+                    {empleadoActual.nombre} {empleadoActual.apellido}
+                  </b>
+                  .
+                </Typography>
+              )}
+            </>
+          ) : (
+            <>
+              <Autocomplete
+                options={gruposOrdenados}
+                value={grupoElegido}
+                getOptionLabel={(option) => option.nombre || ''}
+                isOptionEqualToValue={(option, value) => option.id_grupo === value.id_grupo}
+                getOptionDisabled={(option) => !esAsignable(option)}
+                onChange={(event, grupo) => setIdGrupoElegido(grupo?.id_grupo ?? null)}
+                noOptionsText="No hay grupos registrados"
+                renderOption={(props, option) => {
+                  const { key, ...otros } = props;
+                  const cantidad = option.activos?.length || 0;
+                  return (
+                    <li key={key} {...otros}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="body2" noWrap>
+                          {option.nombre}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap component="div">
+                          {etiquetaEstadoGrupo(option)} · {cantidad} {cantidad === 1 ? 'activo' : 'activos'}
+                        </Typography>
+                      </Box>
+                    </li>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Grupo"
+                    placeholder="Escribe el nombre del grupo"
+                    margin="dense"
+                    fullWidth
+                  />
+                )}
+              />
+              <Typography variant="caption" color="text.secondary" component="div">
+                Solo se puede asignar un grupo con todos sus activos en bodega.
+              </Typography>
+              {grupoElegido && (
+                <>
+                  <List dense disablePadding sx={{ mt: 1 }}>
+                    {activosDelGrupo.map((activo) => (
+                      <ListItemText
+                        key={activo.id_activo}
+                        primary={`${activo.serial} · ${activo.tipo_activo}`}
+                        secondary={[activo.marca, activo.modelo].filter(Boolean).join(' ') || null}
+                        sx={{ my: 0.5 }}
+                      />
+                    ))}
+                  </List>
+                  {empleadoActual && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Se asignarán <b>{activosDelGrupo.length}</b>{' '}
+                      {activosDelGrupo.length === 1 ? 'activo' : 'activos'} del grupo «{grupoElegido.nombre}» a{' '}
+                      <b>
+                        {empleadoActual.nombre} {empleadoActual.apellido}
+                      </b>
+                      .
+                    </Typography>
+                  )}
+              </>
+          )}
+          </>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button
-            onClick={() => handleAssign(form)}
-            variant="contained"
-            disabled={form.ids_activos.length === 0}
-          >
-            Asignar{form.ids_activos.length > 1 ? ` (${form.ids_activos.length})` : ''}
-          </Button>
+          {modoDialogo === MODO_ACTIVOS ? (
+            <Button
+              onClick={() => handleAssign(form)}
+              variant="contained"
+              disabled={form.ids_activos.length === 0}
+            >
+              Asignar{form.ids_activos.length > 1 ? ` (${form.ids_activos.length})` : ''}
+            </Button>
+          ) : (
+            <Button
+              onClick={asignarGrupo}
+              variant="contained"
+              disabled={!esAsignable(grupoElegido) || asignandoGrupo}
+            >
+              Asignar grupo{grupoElegido ? ` (${activosDelGrupo.length})` : ''}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

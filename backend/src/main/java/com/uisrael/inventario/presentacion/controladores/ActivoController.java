@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoDetalleUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoUseCase;
+import com.uisrael.inventario.aplicacion.casosuso.entrada.IGrupoActivosUseCase;
 import com.uisrael.inventario.dominio.entidades.Activo;
 import com.uisrael.inventario.dominio.entidades.ActivoDetalle;
+import com.uisrael.inventario.dominio.entidades.GrupoActivos;
 import com.uisrael.inventario.presentacion.dto.request.ActivoRequestDto;
 import com.uisrael.inventario.presentacion.dto.response.ActivoResponseDto;
 import com.uisrael.inventario.presentacion.mapeadores.IActivoDetalleDtoMapper;
@@ -37,13 +39,15 @@ public class ActivoController {
 	private final IActivoDetalleUseCase activoDetalleUseCase;
 	private final IActivoDtoMapper mapper;
 	private final IActivoDetalleDtoMapper detalleMapper;
+	private final IGrupoActivosUseCase grupoActivosUseCase;
 
 	public ActivoController(IActivoUseCase activoUseCase, IActivoDetalleUseCase activoDetalleUseCase,
-			IActivoDtoMapper mapper, IActivoDetalleDtoMapper detalleMapper) {
+			IActivoDtoMapper mapper, IActivoDetalleDtoMapper detalleMapper, IGrupoActivosUseCase grupoActivosUseCase) {
 		this.activoUseCase = activoUseCase;
 		this.activoDetalleUseCase = activoDetalleUseCase;
 		this.mapper = mapper;
 		this.detalleMapper = detalleMapper;
+		this.grupoActivosUseCase = grupoActivosUseCase;
 	}
 
 	@PostMapping
@@ -61,6 +65,7 @@ public class ActivoController {
 	public List<ActivoResponseDto> listarTodos() {
 		Map<Integer, ActivoDetalle> detallesPorActivo = activoDetalleUseCase.listarTodos().stream()
 				.collect(Collectors.toMap(ActivoDetalle::getIdActivo, Function.identity()));
+		Map<Integer, String> nombresDeGrupo = nombresDeGrupo();
 
 		return activoUseCase.listarTodos().stream()
 				.map(mapper::toResponseDto)
@@ -69,14 +74,15 @@ public class ActivoController {
 					if (detalle != null) {
 						responseDto.setDetalle(detalleMapper.toResponseDto(detalle));
 					}
-					return responseDto;
+					return conNombreDeGrupo(responseDto, nombresDeGrupo);
 				})
 				.toList();
 	}
 
 	@GetMapping("/{id}")
 	public ActivoResponseDto buscarPorId(@PathVariable("id") int id) {
-		return enriquecerConDetalle(mapper.toResponseDto(activoUseCase.buscarPorId(id)));
+		return conNombreDeGrupo(enriquecerConDetalle(mapper.toResponseDto(activoUseCase.buscarPorId(id))),
+				nombresDeGrupo());
 	}
 
 	@PutMapping("/{id}")
@@ -84,6 +90,9 @@ public class ActivoController {
 		Activo existente = activoUseCase.buscarPorId(id);
 		Activo activo = mapper.toDomain(requestDto);
 		activo.setIdActivo(id);
+		// La pertenencia a un grupo solo se cambia desde /api/grupos: editar el
+		// activo no debe sacarlo de su grupo.
+		activo.setIdGrupo(existente.getIdGrupo());
 		activo.setCreatedAt(existente.getCreatedAt());
 		activo.setUpdatedAt(LocalDateTime.now());
 		ActivoDetalle detalle = requestDto.getDetalle() == null ? null : detalleMapper.toDomain(requestDto.getDetalle());
@@ -95,6 +104,18 @@ public class ActivoController {
 	public ResponseEntity<Void> eliminar(@PathVariable("id") int id) {
 		activoUseCase.eliminar(id);
 		return ResponseEntity.noContent().build();
+	}
+
+	private Map<Integer, String> nombresDeGrupo() {
+		return grupoActivosUseCase.listarTodos().stream()
+				.collect(Collectors.toMap(GrupoActivos::getIdGrupo, GrupoActivos::getNombre));
+	}
+
+	private static ActivoResponseDto conNombreDeGrupo(ActivoResponseDto responseDto, Map<Integer, String> nombresDeGrupo) {
+		if (responseDto.getIdGrupo() != null) {
+			responseDto.setNombreGrupo(nombresDeGrupo.get(responseDto.getIdGrupo()));
+		}
+		return responseDto;
 	}
 
 	private ActivoResponseDto enriquecerConDetalle(ActivoResponseDto responseDto) {

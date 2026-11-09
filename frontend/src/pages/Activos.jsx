@@ -219,6 +219,15 @@ const Activos = () => {
               </TableCell>
               <TableCell sx={{ width: '13%' }}>
                 <Typography variant="subtitle2">Custodio Actual</Typography>
+                <TextField
+                  size="small"
+                  variant="standard"
+                  placeholder="Filtrar..."
+                  value={filters.custodio}
+                  onChange={(e) =>
+                    setFilters({ ...filters, custodio: e.target.value })
+                  }
+                />
                 <FormControl variant="standard" size="small" fullWidth>
                   <Select
                     displayEmpty
@@ -239,6 +248,9 @@ const Activos = () => {
                 </FormControl>
               </TableCell>
               <TableCell sx={{ width: '9%' }}>
+                <Typography variant="subtitle2">Grupo</Typography>
+              </TableCell>
+              <TableCell sx={{ width: '9%' }}>
                 <Typography variant="subtitle2">IP</Typography>
                 <TextField
                   size="small"
@@ -251,7 +263,7 @@ const Activos = () => {
                 />
               </TableCell>
               <TableCell sx={{ width: '9%' }}>
-                <Typography variant="subtitle2">Dominio</Typography>
+                <Typography variant="subtitle2">Hostname</Typography>
                 <TextField
                   size="small"
                   variant="standard"
@@ -279,7 +291,7 @@ const Activos = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={11} align="center" sx={{ py: 3 }}>
                   <LoadingSpinner />
                 </TableCell>
               </TableRow>
@@ -372,6 +384,17 @@ const Activos = () => {
                       </span>
                     </Tooltip>
                   </TableCell>
+                  <TableCell
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Tooltip title={row.nombre_grupo || ''}>
+                      <span>{row.nombre_grupo || '-'}</span>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell>
                     <Typography
                       variant="body2"
@@ -442,7 +465,7 @@ const Activos = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={11} align="center" sx={{ py: 3 }}>
                   No hay activos.
                 </TableCell>
               </TableRow>

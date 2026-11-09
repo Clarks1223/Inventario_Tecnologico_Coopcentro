@@ -20,6 +20,10 @@ public class Activo {
 	private String estado;
 	private int idOficina;
 	private String observaciones;
+	/** Descripcion libre y opcional del estado fisico del equipo. */
+	private String descripcionEstado;
+	/** Grupo al que pertenece; null si no esta en ninguno. */
+	private Integer idGrupo;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 

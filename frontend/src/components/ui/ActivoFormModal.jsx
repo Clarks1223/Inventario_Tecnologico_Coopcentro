@@ -15,10 +15,12 @@ import ComputoFields from './ComputoFields';
 import DispositivoMovilFields from './DispositivoMovilFields';
 import ImpresoraFields from './ImpresoraFields';
 import PerifericoFields from './PerifericoFields';
+import { MAX_DESCRIPCION_ESTADO, errorDescripcionEstado } from '../../utils/descripcionEstado';
 
-// Lo que cabe en la celda de observación más angosta del acta impresa
-// (147 pt a 7.5 pt de fuente). Debe coincidir con el @Size del backend.
-const MAX_OBSERVACIONES = 40;
+// Lo que cabe holgado en la celda de observación más angosta del acta impresa
+// (147 pt a 7.5 pt de fuente). Debe coincidir con el @Size(max = 30) de
+// ActivoRequestDto.observaciones en el backend.
+const MAX_OBSERVACIONES = 30;
 
 const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = [] }) {
   const {
@@ -37,6 +39,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
   const titleId = useId();
   const contentId = useId();
   const dialogoPantallaCompleta = useDialogFullScreen();
+  const errorDeDescripcion = errorDescripcionEstado(baseData.descripcion_estado);
 
   const oficinasSeleccionables = oficinas.filter(
     (of) => of.activo || of.id_oficina === baseData.id_oficina,
@@ -141,7 +144,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
 
             <Grid size={{ xs: 12 }}>
               <TextField
-                label="Observaciones"
+                label="Observaciones en el acta"
                 fullWidth
                 value={baseData.observaciones || ''}
                 onChange={(e) =>
@@ -150,6 +153,23 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 slotProps={{ htmlInput: { maxLength: MAX_OBSERVACIONES } }}
                 error={(baseData.observaciones || '').length > MAX_OBSERVACIONES}
                 helperText={`Se imprime en el acta. ${(baseData.observaciones || '').length}/${MAX_OBSERVACIONES} caracteres.`}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Descripción del estado"
+                placeholder="Ej. Pantalla con rayones leves, batería dura 2 horas"
+                fullWidth
+                multiline
+                minRows={2}
+                value={baseData.descripcion_estado || ''}
+                onChange={(e) =>
+                  setBaseData({ ...baseData, descripcion_estado: e.target.value })
+                }
+                slotProps={{ htmlInput: { maxLength: MAX_DESCRIPCION_ESTADO } }}
+                error={!!errorDeDescripcion}
+                helperText={`${errorDeDescripcion ? `${errorDeDescripcion}. ` : ''}Opcional, no se imprime en el acta. ${(baseData.descripcion_estado || '').length}/${MAX_DESCRIPCION_ESTADO} caracteres.`}
               />
             </Grid>
 
@@ -172,7 +192,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSave} variant="contained">
+          <Button onClick={handleSave} variant="contained" disabled={!!errorDeDescripcion}>
             Guardar
           </Button>
         </DialogActions>

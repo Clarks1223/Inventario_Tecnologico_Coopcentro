@@ -62,7 +62,7 @@ const ComputoFields = memo(function ComputoFields({ detailData, setDetailData })
       </Grid>
       <Grid size={{ xs: 12, sm: 6 }}>
         <TextField
-          label="Dominio"
+          label="Hostname"
           fullWidth
           value={detailData.dominio || ''}
           onChange={(e) =>

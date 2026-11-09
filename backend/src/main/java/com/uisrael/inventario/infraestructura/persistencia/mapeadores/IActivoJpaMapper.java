@@ -10,9 +10,11 @@ import com.uisrael.inventario.infraestructura.persistencia.jpa.ActivoEntity;
 public interface IActivoJpaMapper {
 
 	@Mapping(source = "oficina.idOficina", target = "idOficina")
+	@Mapping(source = "grupo.idGrupo", target = "idGrupo")
 	Activo toDomain(ActivoEntity entity);
 
 	@Mapping(source = "idOficina", target = "oficina")
+	@Mapping(source = "idGrupo", target = "grupo")
 	ActivoEntity toEntity(Activo activoPojo);
 
 }

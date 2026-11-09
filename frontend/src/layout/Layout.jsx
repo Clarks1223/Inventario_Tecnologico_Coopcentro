@@ -22,6 +22,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import DevicesIcon from '@mui/icons-material/Devices';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
+import WorkspacesIcon from '@mui/icons-material/Workspaces';
 import WorkIcon from '@mui/icons-material/Work';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LockResetIcon from '@mui/icons-material/LockReset';
@@ -36,6 +37,7 @@ const menuItems = [
   { text: 'Cargos', icon: <WorkIcon />, path: '/cargos' },
   { text: 'Empleados', icon: <PeopleIcon />, path: '/empleados' },
   { text: 'Activos', icon: <DevicesIcon />, path: '/activos' },
+  { text: 'Grupos', icon: <WorkspacesIcon />, path: '/grupos' },
   { text: 'Asignaciones', icon: <AssignmentIcon />, path: '/asignaciones' },
   { text: 'Historial de Asignaciones', icon: <HistoryIcon />, path: '/historial-asignaciones' },
 ];
