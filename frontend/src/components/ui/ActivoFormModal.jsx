@@ -17,9 +17,10 @@ import ImpresoraFields from './ImpresoraFields';
 import PerifericoFields from './PerifericoFields';
 import { MAX_DESCRIPCION_ESTADO, errorDescripcionEstado } from '../../utils/descripcionEstado';
 
-// Lo que cabe en la celda de observación más angosta del acta impresa
-// (147 pt a 7.5 pt de fuente). Debe coincidir con el @Size del backend.
-const MAX_OBSERVACIONES = 40;
+// Lo que cabe holgado en la celda de observación más angosta del acta impresa
+// (147 pt a 7.5 pt de fuente). Debe coincidir con el @Size(max = 30) de
+// ActivoRequestDto.observaciones en el backend.
+const MAX_OBSERVACIONES = 30;
 
 const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = [] }) {
   const {
