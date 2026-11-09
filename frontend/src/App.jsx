@@ -13,6 +13,7 @@ const Oficinas = lazy(() => import('./pages/Oficinas'));
 const Cargos = lazy(() => import('./pages/Cargos'));
 const Activos = lazy(() => import('./pages/Activos'));
 const Empleados = lazy(() => import('./pages/Empleados'));
+const Grupos = lazy(() => import('./pages/Grupos'));
 const Asignaciones = lazy(() => import('./pages/Asignaciones'));
 const HistorialAsignaciones = lazy(() => import('./pages/HistorialAsignaciones'));
 const Login = lazy(() => import('./pages/Login'));
@@ -50,6 +51,7 @@ function App() {
                     <Route path="cargos" element={<Cargos />} />
                     <Route path="empleados" element={<Empleados />} />
                     <Route path="activos" element={<Activos />} />
+                    <Route path="grupos" element={<Grupos />} />
                     <Route path="asignaciones" element={<Asignaciones />} />
                     <Route path="historial-asignaciones" element={<HistorialAsignaciones />} />
                   </Route>

@@ -248,6 +248,9 @@ const Activos = () => {
                 </FormControl>
               </TableCell>
               <TableCell sx={{ width: '9%' }}>
+                <Typography variant="subtitle2">Grupo</Typography>
+              </TableCell>
+              <TableCell sx={{ width: '9%' }}>
                 <Typography variant="subtitle2">IP</Typography>
                 <TextField
                   size="small"
@@ -288,7 +291,7 @@ const Activos = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={11} align="center" sx={{ py: 3 }}>
                   <LoadingSpinner />
                 </TableCell>
               </TableRow>
@@ -381,6 +384,17 @@ const Activos = () => {
                       </span>
                     </Tooltip>
                   </TableCell>
+                  <TableCell
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Tooltip title={row.nombre_grupo || ''}>
+                      <span>{row.nombre_grupo || '-'}</span>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell>
                     <Typography
                       variant="body2"
@@ -451,7 +465,7 @@ const Activos = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={10} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={11} align="center" sx={{ py: 3 }}>
                   No hay activos.
                 </TableCell>
               </TableRow>
