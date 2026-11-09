@@ -54,6 +54,9 @@ public class ActivoEntity {
 	@Column(name = "observaciones", columnDefinition = "TEXT")
 	private String observaciones;
 
+	@Column(name = "descripcion_estado", length = 250)
+	private String descripcionEstado;
+
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 

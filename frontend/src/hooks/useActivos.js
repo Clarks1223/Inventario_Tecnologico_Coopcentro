@@ -170,6 +170,7 @@ export const useActivos = () => {
         Custodio: row.empleado_asignado || '',
         Custodia: etiquetaDeCustodia(row),
         Observaciones: row.observaciones || '',
+        'Descripción del Estado': row.descripcion_estado || '',
         'Tipo Conexión': detalle.tipo_conexion || '',
         'Estado Batería': detalle.estado_bateria || '',
         'Modelo Cabezal': detalle.modelo_cabezal || '',
