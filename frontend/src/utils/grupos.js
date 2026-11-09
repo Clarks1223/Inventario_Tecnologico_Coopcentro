@@ -34,6 +34,16 @@ export const colorEstadoGrupo = (grupo) => COLORES[grupo?.estado] || 'default';
 /** Solo un grupo con todos sus activos en bodega se puede entregar. */
 export const esAsignable = (grupo) => grupo?.estado === ESTADO_GRUPO.EN_BODEGA;
 
+/**
+ * A quién está entregado un activo ya enriquecido con su custodio (ver
+ * enriquecerActivos). En bodega no se nombra al técnico custodio: en un grupo
+ * lo que interesa es si el equipo está entregado y a quién.
+ */
+export const asignadoA = (activo) => {
+  if (activo.en_bodega) return 'En bodega';
+  return activo.empleado_asignado || '—';
+};
+
 /** Activos que pueden entrar a un grupo: operativos y sin grupo. */
 export const activosAgrupables = (activos) =>
   activos.filter((a) => a.estado === ESTADO_ACTIVO.OPERATIVO && a.id_grupo == null);

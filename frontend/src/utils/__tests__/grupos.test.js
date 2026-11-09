@@ -1,7 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ESTADO_GRUPO, etiquetaEstadoGrupo, colorEstadoGrupo, esAsignable, activosAgrupables,
+  ESTADO_GRUPO, etiquetaEstadoGrupo, colorEstadoGrupo, esAsignable, activosAgrupables, asignadoA,
 } from '../grupos';
+
+describe('asignadoA', () => {
+  it('muestra el empleado al que está entregado', () => {
+    expect(asignadoA({ en_bodega: false, empleado_asignado: 'Erick Santillan' })).toBe('Erick Santillan');
+  });
+
+  it('dice "En bodega" aunque haya un técnico custodio', () => {
+    expect(asignadoA({ en_bodega: true, empleado_asignado: 'Pablo Uchuari' })).toBe('En bodega');
+  });
+
+  it('sin acta abierta (dado de baja o robado) no hay a quién mostrar', () => {
+    expect(asignadoA({ en_bodega: false, empleado_asignado: '' })).toBe('—');
+  });
+});
 
 describe('etiquetaEstadoGrupo', () => {
   it('nombra al empleado cuando el grupo está asignado', () => {

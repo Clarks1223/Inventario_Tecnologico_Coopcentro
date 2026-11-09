@@ -10,6 +10,12 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -21,7 +27,8 @@ import { useDialogFullScreen } from '../hooks/useDialogFullScreen';
 import PageHeader from '../components/ui/PageHeader';
 import PageToolbar from '../components/ui/PageToolbar';
 import DataTable from '../components/ui/DataTable';
-import { colorEstadoGrupo, etiquetaEstadoGrupo } from '../utils/grupos';
+import { asignadoA, colorEstadoGrupo, etiquetaEstadoGrupo } from '../utils/grupos';
+import { chipDeEstadoActivo } from '../constants/activosConstants';
 import { filtrarActivosPorTexto } from '../utils/filtrarActivos';
 
 const columns = [
@@ -181,6 +188,37 @@ const Grupos = () => {
           <Typography variant="caption" color="text.secondary">
             Solo se ofrecen activos operativos que no pertenecen a otro grupo.
           </Typography>
+          {activosElegidos.length > 0 && (
+            <TableContainer sx={{ mt: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+              <Table size="small" aria-label="Activos seleccionados y a quién están asignados">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Serial</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell>Marca / Modelo</TableCell>
+                    <TableCell>Asignado a</TableCell>
+                    <TableCell>Estado</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {activosElegidos.map((activo) => {
+                    const { label, color } = chipDeEstadoActivo(activo.estado);
+                    return (
+                      <TableRow key={activo.id_activo}>
+                        <TableCell>{activo.serial}</TableCell>
+                        <TableCell>{activo.tipo_activo}</TableCell>
+                        <TableCell>{[activo.marca, activo.modelo].filter(Boolean).join(' ') || '—'}</TableCell>
+                        <TableCell>{asignadoA(activo)}</TableCell>
+                        <TableCell>
+                          <Chip size="small" label={label} color={color} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancelar</Button>

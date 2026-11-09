@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { gruposService } from '../services/gruposService';
 import { activosService } from '../services/activosService';
+import { asignacionesService } from '../services/asignacionesService';
+import { empleadosService } from '../services/empleadosService';
+import { enriquecerActivos } from '../utils/dashboardStats';
 import { useSnackbar } from './useSnackbar';
 import { activosAgrupables } from '../utils/grupos';
 
@@ -22,12 +25,15 @@ export const useGrupos = () => {
   const fetchAll = useCallback(async (signal) => {
     setIsLoading(true);
     try {
-      const [gruposRes, activosRes] = await Promise.all([
+      const [gruposRes, activosRes, actasRes, empleadosRes] = await Promise.all([
         gruposService.getGrupos({ signal }),
         activosService.getActivos({ signal }),
+        asignacionesService.getAsignaciones({ signal }),
+        empleadosService.getEmpleados({ signal }),
       ]);
       setGrupos(gruposRes.data || []);
-      setActivos(activosRes.data || []);
+      // A quién está entregado cada activo sale de su acta abierta.
+      setActivos(enriquecerActivos(activosRes.data || [], [], empleadosRes.data || [], actasRes.data || []));
     } catch (error) {
       if (!axios.isCancel(error)) console.error(error);
     } finally {

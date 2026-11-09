@@ -14,11 +14,19 @@ vi.mock('../../services/gruposService', () => ({
 vi.mock('../../services/activosService', () => ({
   activosService: { getActivos: vi.fn() },
 }));
+vi.mock('../../services/asignacionesService', () => ({
+  asignacionesService: { getAsignaciones: vi.fn().mockResolvedValue({ data: [] }) },
+}));
+vi.mock('../../services/empleadosService', () => ({
+  empleadosService: { getEmpleados: vi.fn().mockResolvedValue({ data: [] }) },
+}));
 const showSnackbar = vi.fn();
 vi.mock('../useSnackbar', () => ({ useSnackbar: () => showSnackbar }));
 
 import { gruposService } from '../../services/gruposService';
 import { activosService } from '../../services/activosService';
+import { asignacionesService } from '../../services/asignacionesService';
+import { empleadosService } from '../../services/empleadosService';
 import { useGrupos } from '../useGrupos';
 
 const error400 = (message) => Object.assign(new Error(message), { response: { status: 400, data: { message } } });
@@ -33,6 +41,38 @@ beforeEach(() => {
   vi.clearAllMocks();
   gruposService.getGrupos.mockResolvedValue({ data: [] });
   activosService.getActivos.mockResolvedValue({ data: [] });
+  asignacionesService.getAsignaciones.mockResolvedValue({ data: [] });
+  empleadosService.getEmpleados.mockResolvedValue({ data: [] });
+});
+
+describe('useGrupos carga a quién está entregado cada activo', () => {
+  it('enriquece los activos con su custodio a partir de las actas abiertas', async () => {
+    activosService.getActivos.mockResolvedValue({
+      data: [
+        { id_activo: 1, serial: 'SN-1', estado: 'OPERATIVO' },
+        { id_activo: 2, serial: 'SN-2', estado: 'OPERATIVO' },
+      ],
+    });
+    asignacionesService.getAsignaciones.mockResolvedValue({
+      data: [
+        { id_acta: 10, id_activo: 1, id_empleado: 7, estado_asignacion: 'activa' },
+        { id_acta: 11, id_activo: 2, id_empleado: 9, estado_asignacion: 'custodia' },
+      ],
+    });
+    empleadosService.getEmpleados.mockResolvedValue({
+      data: [
+        { id_empleado: 7, nombre: 'Erick', apellido: 'Santillan' },
+        { id_empleado: 9, nombre: 'Pablo', apellido: 'Uchuari' },
+      ],
+    });
+
+    const { result } = await montar();
+
+    const [entregado, enBodega] = result.current.opcionesDeActivos;
+    expect(entregado.empleado_asignado).toBe('Erick Santillan');
+    expect(entregado.en_bodega).toBe(false);
+    expect(enBodega.en_bodega).toBe(true);
+  });
 });
 
 describe('useGrupos.handleSave tras un fallo parcial', () => {
