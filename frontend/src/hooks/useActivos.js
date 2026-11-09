@@ -183,7 +183,7 @@ export const useActivos = () => {
         'Tipo Almacenamiento': detalle.tipo_almacenamiento || '',
         'Almacenamiento (GB)': detalle.almacenamiento_gb ?? '',
         IP: detalle.ip || '',
-        Dominio: detalle.dominio || '',
+        Hostname: detalle.dominio || '',
         Cargador: detalle.incluye_cargador === undefined || detalle.incluye_cargador === null
           ? '' : (detalle.incluye_cargador ? 'Sí' : 'No'),
         'Cable USB': detalle.incluye_cable_usb === undefined || detalle.incluye_cable_usb === null

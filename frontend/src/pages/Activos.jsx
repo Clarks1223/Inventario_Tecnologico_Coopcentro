@@ -263,7 +263,7 @@ const Activos = () => {
                 />
               </TableCell>
               <TableCell sx={{ width: '9%' }}>
-                <Typography variant="subtitle2">Dominio</Typography>
+                <Typography variant="subtitle2">Hostname</Typography>
                 <TextField
                   size="small"
                   variant="standard"
