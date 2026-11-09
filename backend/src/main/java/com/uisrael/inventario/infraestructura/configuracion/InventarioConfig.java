@@ -23,6 +23,7 @@ import com.uisrael.inventario.aplicacion.casosuso.entrada.IActivoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IAuthUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.ICargoUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IEmpleadoUseCase;
+import com.uisrael.inventario.aplicacion.casosuso.entrada.IGrupoActivosUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IOficinaUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.entrada.IUsuarioTiUseCase;
 import com.uisrael.inventario.aplicacion.casosuso.impl.ActaDocumentoUseCaseImpl;
@@ -32,6 +33,7 @@ import com.uisrael.inventario.aplicacion.casosuso.impl.ActivoUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.AuthUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.CargoUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.EmpleadoUseCaseImpl;
+import com.uisrael.inventario.aplicacion.casosuso.impl.GrupoActivosUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.OficinaUseCaseImpl;
 import com.uisrael.inventario.aplicacion.casosuso.impl.UsuarioTiUseCaseImpl;
 import com.uisrael.inventario.dominio.correo.IEmailSender;
@@ -149,6 +151,12 @@ public class InventarioConfig {
 	@Bean
 	IGrupoActivosRepositorio grupoActivosRepositorio(IGrupoActivosJpaRepositorio jpaRepositorio, IGrupoActivosJpaMapper mapper) {
 		return new GrupoActivosRepositorioImpl(jpaRepositorio, mapper);
+	}
+
+	@Bean
+	IGrupoActivosUseCase grupoActivosUseCase(IGrupoActivosRepositorio repositorio, IActivoRepositorio activoRepositorio,
+			IActaEntregaRecepcionRepositorio actaRepositorio, IEmpleadoRepositorio empleadoRepositorio) {
+		return new GrupoActivosUseCaseImpl(repositorio, activoRepositorio, actaRepositorio, empleadoRepositorio);
 	}
 
 	@Bean
