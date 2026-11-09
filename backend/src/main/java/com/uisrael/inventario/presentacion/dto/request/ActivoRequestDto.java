@@ -31,8 +31,8 @@ public class ActivoRequestDto {
 	@NotBlank(message = "es obligatorio")
 	@Size(min = 3, max = 40, message = "debe tener entre 3 y 40 caracteres")
 	@Pattern(
-			regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s]+$",
-			message = "solo puede contener letras, números y espacios"
+			regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\\s\\-]+$",
+			message = "solo puede contener letras, números, espacios y guiones (-)"
 	)
 	private String modelo;
 

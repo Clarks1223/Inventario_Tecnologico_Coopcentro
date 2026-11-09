@@ -112,6 +112,7 @@ const ActivoFormModal = memo(function ActivoFormModal({ editorProps, oficinas = 
                 onChange={(e) =>
                   setBaseData({ ...baseData, modelo: e.target.value })
                 }
+                helperText="Letras, números, espacios y guiones (-)."
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
