@@ -73,6 +73,11 @@ public class GrupoActivosUseCaseImpl implements IGrupoActivosUseCase {
 	}
 
 	@Override
+	public List<GrupoActivos> listarTodos() {
+		return repositorio.listarTodos();
+	}
+
+	@Override
 	public ResumenGrupo resumen(int idGrupo) {
 		return resumir(buscarPorId(idGrupo), actasAbiertasPorActivo());
 	}

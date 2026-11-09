@@ -9,6 +9,8 @@ public interface IGrupoActivosUseCase {
 	/** Crea el grupo si idGrupo es 0; si no, lo actualiza conservando su createdAt. */
 	GrupoActivos guardar(GrupoActivos grupo);
 	GrupoActivos buscarPorId(int idGrupo);
+	/** Solo los grupos, sin calcular estado: para consultas livianas (p. ej. nombres). */
+	List<GrupoActivos> listarTodos();
 	ResumenGrupo resumen(int idGrupo);
 	List<ResumenGrupo> listarResumenes();
 	/** Desagrupa sus activos y borra el grupo; no toca actas ni custodia. */
